@@ -20,6 +20,7 @@ DATA_FILES = [file for file in Path(DATA_DIR).iterdir() if file.suffix == ".png"
 
 RESIZE_FORMAT = (1280,720)
 CHESSBOARD_SIZE = (8,8)
+
 # Returns the image scale to a size of 
 def resize(img):
     return cv.resize(img, RESIZE_FORMAT)
@@ -34,20 +35,7 @@ def compute_edge_detection(img):
     edges = cv.Canny(blurred, 100, 200)  # Threshold values can be tuned
     return edges
 
-# Compute the corner detector using Harris
-def compute_corners_detector(img):
-    ret, corners = cv.findChessboardCorners(img, CHESSBOARD_SIZE, None)    
-
-    if ret: # corners detected
-        cv.drawChessboardCorners(img, CHESSBOARD_SIZE, corners, ret)
-        return img
-    
-    return img 
-
-
-
 if __name__ == '__main__':
-    """
     for f in DATA_FILES:
         img = cv.imread(str(f), cv.IMREAD_GRAYSCALE)  # Read as grayscale
         if img is None:
@@ -64,10 +52,4 @@ if __name__ == '__main__':
         cv.imwrite(filename, dst)
 
         print(f"Processed and saved: {filename}")
-    """
-    for f in DATA_FILES:
-        src = resize(cv.imread(str(f), cv.IMREAD_GRAYSCALE))
-        blur_src = gaussian_blur(src)
-        dst = compute_corners_detector(blur_src)
-        cv.imshow("Corners", dst)
-        cv.waitKey(0)
+    
