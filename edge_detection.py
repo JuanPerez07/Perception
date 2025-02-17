@@ -3,6 +3,7 @@ import os
 import cv2 as cv
 from pathlib import Path
 import numpy as np
+import glob
 """
 The objective is to compute edges across different perspectives of the same pattern
     (chessboard) to gain intrinsic and extrinsic parameters of the camera used.
@@ -19,6 +20,8 @@ os.makedirs(EDGE_DIR, exist_ok=True)  # Create 'edges' directory if it doesn't e
 SQUARE_SIZE=25
 
 DATA_FILES = [file for file in Path(DATA_DIR).iterdir() if file.suffix == ".png"]
+#DATA_FILES = glob.glob(DATA_FILES)
+
 
 RESIZE_FORMAT = (1280,720)
 CHESSBOARD_SIZE = (8,8)
@@ -53,13 +56,17 @@ def find_corners(img):
     ret, corners = cv.findChessboardCorners(img, CHESSBOARD_SIZE, None)
 
     if ret:  # Si se encontraron las esquinas
+        print("Esquinas found")
         objpoints.append(objp)
         refined_corners = cv.cornerSubPix(img, corners, (11, 11), (-1, -1), criteria)
         imgpoints.append(refined_corners)
 
         # Dibujar las esquinas detectadas
         cv.drawChessboardCorners(img, CHESSBOARD_SIZE, refined_corners, ret)
-        return img
+        cv.imshow('image', img)
+        cv.waitKey(0)
+    else:
+        print("No entra")
 
 if __name__ == '__main__':
     for f in DATA_FILES:
@@ -68,9 +75,11 @@ if __name__ == '__main__':
             print(f"Warning: Could not read image {f}")
             continue
 
-        edges = compute_edge_detection(img)  # Compute edges
-        
+        #edges = compute_edge_detection(img)  # Compute edges
 
+        find_corners(img)        
+        
+        """
         # Save the result in the 'edges' directory
         filename = os.path.join(EDGE_DIR, 'edge_' + f.name)
         
@@ -79,3 +88,4 @@ if __name__ == '__main__':
         cv.imwrite(filename, dst)
 
         print(f"Processed and saved: {filename}")
+        """
