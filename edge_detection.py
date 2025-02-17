@@ -2,7 +2,7 @@
 import os
 import cv2 as cv
 from pathlib import Path
-
+import numpy as np
 """
 The objective is to compute edges across different perspectives of the same pattern
     (chessboard) to gain intrinsic and extrinsic parameters of the camera used.
@@ -16,10 +16,23 @@ DATA_DIR = os.path.join(os.getcwd(), "data")
 EDGE_DIR = os.path.join(os.getcwd(), "edges")
 os.makedirs(EDGE_DIR, exist_ok=True)  # Create 'edges' directory if it doesn't exist
 
+SQUARE_SIZE=25
+
 DATA_FILES = [file for file in Path(DATA_DIR).iterdir() if file.suffix == ".png"]
 
 RESIZE_FORMAT = (1280,720)
 CHESSBOARD_SIZE = (8,8)
+
+# Listas para almacenar puntos 3D (mundo real) y puntos 2D (imagen)
+objpoints = []  # Puntos 3D
+imgpoints = []  # Puntos 2D detectados en las imágenes
+
+# Puntos 3D en el espacio real del ajedrez (coordenadas en milímetros)
+objp = np.zeros((CHESSBOARD_SIZE[0] * CHESSBOARD_SIZE[1], 3), np.float32)
+objp[:, :2] = np.mgrid[0:CHESSBOARD_SIZE[0], 0:CHESSBOARD_SIZE[1]].T.reshape(-1, 2) * SQUARE_SIZE
+
+criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
 
 # Returns the image scale to a size of 
 def resize(img):
@@ -44,7 +57,6 @@ if __name__ == '__main__':
 
         edges = compute_edge_detection(img)  # Compute edges
         
-        dst = compute_corners_detector(edges)
        
         # Save the result in the 'edges' directory
         filename = os.path.join(EDGE_DIR, 'edge_' + f.name)
@@ -52,4 +64,15 @@ if __name__ == '__main__':
         cv.imwrite(filename, dst)
 
         print(f"Processed and saved: {filename}")
-    
+
+def findcorners(img):
+    # Buscar esquinas del patrón de ajedrez
+    ret, corners = cv.findChessboardCorners(img, CHESSBOARD_SIZE, None)
+
+    if ret:  # Si se encontraron las esquinas
+        objpoints.append(objp)
+        refined_corners = cv.cornerSubPix(img, corners, (11, 11), (-1, -1), criteria)
+        imgpoints.append(refined_corners)
+
+        # Dibujar las esquinas detectadas
+        cv.drawChessboardCorners(img, CHESSBOARD_SIZE, refined_corners, ret)
