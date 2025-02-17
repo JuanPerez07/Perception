@@ -48,24 +48,7 @@ def compute_edge_detection(img):
     edges = cv.Canny(blurred, 100, 200)  # Threshold values can be tuned
     return edges
 
-if __name__ == '__main__':
-    for f in DATA_FILES:
-        img = cv.imread(str(f), cv.IMREAD_GRAYSCALE)  # Read as grayscale
-        if img is None:
-            print(f"Warning: Could not read image {f}")
-            continue
-
-        edges = compute_edge_detection(img)  # Compute edges
-        
-       
-        # Save the result in the 'edges' directory
-        filename = os.path.join(EDGE_DIR, 'edge_' + f.name)
-        
-        cv.imwrite(filename, dst)
-
-        print(f"Processed and saved: {filename}")
-
-def findcorners(img):
+def find_corners(img):
     # Buscar esquinas del patrón de ajedrez
     ret, corners = cv.findChessboardCorners(img, CHESSBOARD_SIZE, None)
 
@@ -76,3 +59,23 @@ def findcorners(img):
 
         # Dibujar las esquinas detectadas
         cv.drawChessboardCorners(img, CHESSBOARD_SIZE, refined_corners, ret)
+        return img
+
+if __name__ == '__main__':
+    for f in DATA_FILES:
+        img = cv.imread(str(f), cv.IMREAD_GRAYSCALE)  # Read as grayscale
+        if img is None:
+            print(f"Warning: Could not read image {f}")
+            continue
+
+        edges = compute_edge_detection(img)  # Compute edges
+        
+
+        # Save the result in the 'edges' directory
+        filename = os.path.join(EDGE_DIR, 'edge_' + f.name)
+        
+        dst = find_corners(img)
+
+        cv.imwrite(filename, dst)
+
+        print(f"Processed and saved: {filename}")
