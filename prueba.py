@@ -6,7 +6,7 @@ DATA_DIR = "dataset"
 IMG_FORMAT = "/*.png"
 # Tamaño del patrón de ajedrez (número de esquinas internas por fila y columna)
 CHESSBOARD_SIZE = (6, 9)  # Ajusta según tu patrón
-SQUARE_SIZE = 25  # Tamaño de cada cuadro en mm (ajustar según tu patrón)
+SQUARE_SIZE = 29  # Tamaño de cada cuadro en mm (ajustar según tu patrón)
 
 # Criterios de precisión para el algoritmo de detección de esquinas
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -21,6 +21,10 @@ imgpoints = []  # Puntos 2D detectados en las imágenes
 
 # Cargar todas las imágenes de la carpeta "datasheet/"
 images = glob.glob(DATA_DIR + IMG_FORMAT)
+
+img = cv2.imread(images[0])  # Leer la primera imagen
+height, width = img.shape[:2]  # Obtener dimensiones
+image_shape = (width, height)  # OpenCV usa (ancho, alto)
 
 for fname in images:
     img = cv2.imread(fname)
@@ -38,5 +42,23 @@ for fname in images:
         #cv2.drawChessboardCorners(img, CHESSBOARD_SIZE, refined_corners, ret)
         #cv2.imshow('Detected Chessboard', img)
         #cv2.waitKey(0)
+# Calibrar la cámara
+ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
+    objpoints, imgpoints, image_shape, None, None
+)
+
+# Mostrar los resultados
+print("📷 Matriz de calibración (K):")
+print(camera_matrix)
+
+print("\n🎯 Coeficientes de distorsión:")
+print(dist_coeffs)
+
+print("\n🔁 Vectores de rotación (uno por imagen):")
+print(rvecs)
+
+print("\n📍 Vectores de traslación (uno por imagen):")
+print(tvecs)
+
 
 cv2.destroyAllWindows()
