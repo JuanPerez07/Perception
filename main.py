@@ -1,10 +1,13 @@
 import cv2
 import numpy as np
 import glob
+import os
 
 # Dataset directory and image format
 DATA_DIR = "dataset"
 IMG_FORMAT = "/*.png"
+# Camera parameter directory
+PARAM_DIR = "params/"
 
 # Chessboard pattern size (internal corners per row and column)
 CHESSBOARD_SIZE = (6, 9)  # Adjust according to your pattern
@@ -21,52 +24,68 @@ objp[:, :2] = np.mgrid[0:CHESSBOARD_SIZE[0], 0:CHESSBOARD_SIZE[1]].T.reshape(-1,
 objpoints = []  # 3D world points
 imgpoints = []  # 2D image points
 
-# Load all images from the dataset folder
-images = glob.glob(DATA_DIR + IMG_FORMAT)
+def calculate_params(images):
+    """ Calculates and saves the intrinsic and extrinsic parameters of the camera. """
+    img = cv2.imread(images[0])
+    height, width = img.shape[:2]
+    image_shape = (width, height)  # OpenCV expects (width, height)
 
-# Get image size from the first image
-img = cv2.imread(images[0])
-height, width = img.shape[:2]
-image_shape = (width, height)  # OpenCV expects (width, height)
+    for fname in images:
+        img = cv2.imread(fname)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-# Detect chessboard corners in images
-for fname in images:
-    img = cv2.imread(fname)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        ret, corners = cv2.findChessboardCorners(gray, CHESSBOARD_SIZE, None)
 
-    # Find the chessboard corners
-    ret, corners = cv2.findChessboardCorners(gray, CHESSBOARD_SIZE, None)
+        if ret:
+            objpoints.append(objp)
+            refined_corners = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+            imgpoints.append(refined_corners)
 
-    if ret:
-        objpoints.append(objp)
-        refined_corners = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-        imgpoints.append(refined_corners)
+    ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
+        objpoints, imgpoints, image_shape, None, None
+    )
 
-# ** Camera Calibration **
-ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
-    objpoints, imgpoints, image_shape, None, None
-)
+    extrinsics = []
+    for i in range(min(len(rvecs), len(tvecs))):
+        R, _ = cv2.Rodrigues(rvecs[i])
+        T = np.hstack((R, tvecs[i]))  # [R | t] matrix
+        extrinsics.append(T)
 
-# ** Compute Extrinsic Matrices for Each Image **
-extrinsics = []
-for i in range(min(len(rvecs),len(tvecs))):
-    print(f"Valor de i: {i}")
-    R, _ = cv2.Rodrigues(rvecs[i])  # Convert rotation vector to matrix
-    T = np.hstack((R, tvecs[i]))  # [R | t] matrix
-    extrinsics.append(T)
+    np.save(PARAM_DIR + "camera_matrix.npy", camera_matrix)
+    np.save(PARAM_DIR + "dist_coeffs.npy", dist_coeffs)
+    np.save(PARAM_DIR + "extrinsics.npy", extrinsics)
 
-# ** Save Intrinsic and Extrinsic Parameters **
-np.save("camera_matrix.npy", camera_matrix)  # Intrinsic matrix
-np.save("dist_coeffs.npy", dist_coeffs)  # Distortion coefficients
-np.save("extrinsics.npy", extrinsics)  # Extrinsic matrices
+    return objpoints, imgpoints
 
-# ** Compute Reprojection Error **
-total_error = 0
-for i in range(len(objpoints)):
-    imgpoints2, _ = cv2.projectPoints(objpoints[i], rvecs[i], tvecs[i], camera_matrix, dist_coeffs)
-    error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)
-    total_error += error
+def compute_error(objpoints, imgpoints):
+    """ Computes the reprojection error using stored calibration parameters. """
+    camera_matrix = np.load(PARAM_DIR + "camera_matrix.npy")
+    dist_coeffs = np.load(PARAM_DIR + "dist_coeffs.npy")
+    extrinsics = np.load(PARAM_DIR + "extrinsics.npy", allow_pickle=True)
 
-print(f"Mean Reprojection Error: {total_error / len(objpoints)}")
+    total_error = 0
+    for i in range(len(objpoints)):
+        R = extrinsics[i][:, :3]
+        t = extrinsics[i][:, 3]
+        rvec, _ = cv2.Rodrigues(R)
 
-cv2.destroyAllWindows()
+        imgpoints2, _ = cv2.projectPoints(objpoints[i], rvec, t, camera_matrix, dist_coeffs)
+        error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)
+        total_error += error
+
+    mean_error = total_error / len(objpoints)
+    return mean_error
+
+if __name__ == '__main__':
+    print("Calculating camera parameters...")
+    
+    images = glob.glob(DATA_DIR + IMG_FORMAT)
+    
+    if not images:
+        print(" No images found in dataset directory!")
+        exit()
+
+    img_points, obj_points = calculate_params(images)
+    error = compute_error(img_points, obj_points)
+    print(f" Mean Reprojection Error: {error}")
+
