@@ -1,7 +1,7 @@
 import cv2
 import os
 
-carpeta = "datasheet"
+carpeta = "dataset"
 
 # Inicializar la cámara
 cap = cv2.VideoCapture(0)
