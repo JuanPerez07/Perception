@@ -8,25 +8,30 @@ import open3d as o3d  # To read .pcd files
 PARAM_DIR = "params/"
 POINTCLOUD_DIR = "pointcloud/"
 CHESSBOARD_SIZE = (6, 9)  # Internal corners per row and column
+SQUARE_SIZE = 29  # Square size in mm (match calibration)
 
 def load_camera_parameters():
-    """Loads intrinsic and extrinsic parameters from PARAM_DIR."""
+    """Loads intrinsic parameters from PARAM_DIR."""
     camera_matrix = np.load(PARAM_DIR + "camera_matrix.npy")
     dist_coeffs = np.load(PARAM_DIR + "dist_coeffs.npy")
-    extrinsics = np.load(PARAM_DIR + "extrinsics.npy", allow_pickle=True)
-    return camera_matrix, dist_coeffs, extrinsics
+    return camera_matrix, dist_coeffs
 
 
 def detect_chessboard(img):
-    """Detects chessboard corners in an image."""
+    """Detects chessboard corners and estimates extrinsics in each frame."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     found, corners = cv2.findChessboardCorners(gray, CHESSBOARD_SIZE, None)
 
     if found:
         refined_corners = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1),
                                            (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
-        return True, refined_corners
-    return False, None
+
+        # Define 3D object points relative to the chessboard
+        objp = np.zeros((CHESSBOARD_SIZE[0] * CHESSBOARD_SIZE[1], 3), np.float32)
+        objp[:, :2] = np.mgrid[0:CHESSBOARD_SIZE[0], 0:CHESSBOARD_SIZE[1]].T.reshape(-1, 2) * SQUARE_SIZE
+
+        return True, refined_corners, objp
+    return False, None, None
 
 
 def load_point_cloud():
@@ -41,41 +46,41 @@ def load_point_cloud():
     pcd = o3d.io.read_point_cloud(pcd_files[0])
     points = np.asarray(pcd.points, dtype=np.float32)  # Convert to numpy array
     
-    print(f" Loaded {points.shape[0]} points from {pcd_files[0]}")
+    print(f"✅ Loaded {points.shape[0]} points from {pcd_files[0]}")
     return points
 
 
-def project_point_cloud(frame, camera_matrix, dist_coeffs, extrinsics, point_cloud):
-    """Projects a 3D point cloud onto the detected chessboard."""
-    found, corners = detect_chessboard(frame)
+def project_point_cloud(frame, camera_matrix, dist_coeffs, point_cloud):
+    """Projects a 3D point cloud onto the detected chessboard dynamically."""
+    found, corners, objp = detect_chessboard(frame)
 
     if found:
-        R = extrinsics[0][:, :3]  # Rotation matrix
-        t = extrinsics[0][:, 3]   # Translation vector
-        rvec, _ = cv2.Rodrigues(R)
+        # Compute rotation and translation vectors dynamically
+        ret, rvec, tvec = cv2.solvePnP(objp, corners, camera_matrix, dist_coeffs)
 
-        # Project 3D points to 2D
-        imgpts, _ = cv2.projectPoints(point_cloud, rvec, t, camera_matrix, dist_coeffs)
+        if ret:
+            # Project the 3D point cloud to 2D
+            imgpts, _ = cv2.projectPoints(point_cloud, rvec, tvec, camera_matrix, dist_coeffs)
 
-        # Draw projected points on the frame
-        for pt in imgpts:
-            x, y = int(pt[0][0]), int(pt[0][1])
-            cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
+            # Draw projected points on the frame
+            for pt in imgpts:
+                x, y = int(pt[0][0]), int(pt[0][1])
+                cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
 
     return frame
 
 
 def overlay_pointcloud_live():
     """Captures video feed and overlays the projected point cloud in real-time."""
-    print(" Starting video capture with 3D point cloud overlay...")
-    camera_matrix, dist_coeffs, extrinsics = load_camera_parameters()
+    print("📷 Starting video capture with 3D point cloud overlay...")
+    camera_matrix, dist_coeffs = load_camera_parameters()
     point_cloud = load_point_cloud()
 
     if point_cloud is None:
-        print(" Exiting: No point cloud loaded.")
+        print("❌ Exiting: No point cloud loaded.")
         return
 
-    cap = cv2.VideoCapture(0)  # Open webcam
+    cap = cv2.VideoCapture(1)  # Open webcam
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -83,7 +88,7 @@ def overlay_pointcloud_live():
             break
 
         # Project the point cloud onto the frame
-        frame = project_point_cloud(frame, camera_matrix, dist_coeffs, extrinsics, point_cloud)
+        frame = project_point_cloud(frame, camera_matrix, dist_coeffs, point_cloud)
 
         cv2.imshow("Augmented Reality - Point Cloud", frame)
 
