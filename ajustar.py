@@ -6,8 +6,8 @@ import open3d as o3d  # To read .pcd files
 
 
 POINTCLOUD_DIR = "pointcloud/"
-PCD_FILE = "gormiti.pcd"
-OUTPUT_FILE = "cortacuellos.pcd"
+PCD_FILE = "carrapax.pcd"
+OUTPUT_FILE = "carrapax_ajustado.pcd"
 
 axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
 
@@ -43,7 +43,7 @@ pcd.rotate(rotation_matrix_X, center=(0, 0, 0))
 
 x_offset = -x_min  # Mover la nube hacia arriba
 pcd.translate((0,0,-x_offset))  # Trasladar solo en Y
-pcd.paint_uniform_color([1, 0, 0])
+pcd.paint_uniform_color([0, 0, 1])
 
 o3d.io.write_point_cloud(POINTCLOUD_DIR + OUTPUT_FILE, pcd)
 o3d.visualization.draw_geometries([pcd,axis])

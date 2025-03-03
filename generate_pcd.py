@@ -1,3 +1,6 @@
+"""
+Creates a pointcloud from a STL file using a mesh grid
+"""
 import open3d as o3d
 import os
 import numpy as np
