@@ -2,7 +2,8 @@ import open3d as o3d
 import os
 import numpy as np
 
-MODEL_NAME = "gormiti.stl"
+MODEL_NAME = "carrapax.stl"
+OUTPUT_FILE = "carrapax.pcd"
 
 def cargar_y_escalar_modelo(ruta_modelo, altura_objetivo=8.0):
     """
@@ -66,7 +67,7 @@ def main():
     pcd = muestrear_nube_de_puntos(mesh, num_puntos=20000)
     
     # Guardar la nube de puntos en formato .pcd
-    ruta_salida = os.path.join(carpeta_salida, "gormiti.pcd")
+    ruta_salida = os.path.join(carpeta_salida, OUTPUT_FILE)
     guardar_nube_de_puntos(pcd, ruta_salida)
     
     # Opcional: Visualizar la nube de puntos
