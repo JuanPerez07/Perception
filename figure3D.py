@@ -9,7 +9,7 @@ PARAM_DIR = "params/"
 POINTCLOUD_DIR = "pointcloud/"
 CHESSBOARD_SIZE = (6, 9)  # Internal corners per row and column
 SQUARE_SIZE = 29  # Square size in mm (match calibration)
-
+PCD_FILE = POINTCLOUD_DIR + "cortacuellos.pcd"
 def load_camera_parameters():
     """Loads intrinsic parameters from PARAM_DIR."""
     camera_matrix = np.load(PARAM_DIR + "camera_matrix.npy")
@@ -43,10 +43,10 @@ def load_point_cloud():
         return None
     
     # Read the first available .pcd file
-    pcd = o3d.io.read_point_cloud(pcd_files[0])
+    pcd = o3d.io.read_point_cloud(PCD_FILE)
     points = np.asarray(pcd.points, dtype=np.float32)  # Convert to numpy array
     
-    print(f"✅ Loaded {points.shape[0]} points from {pcd_files[0]}")
+    print(f"✅ Loaded {points.shape[0]} points from {PCD_FILE}")
     return points
 
 
