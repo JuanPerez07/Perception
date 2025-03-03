@@ -13,16 +13,16 @@ axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 
 
 #pcd_files = glob.glob(POINTCLOUD_DIR + "*.pcd") # ?
 pcd = o3d.io.read_point_cloud(POINTCLOUD_DIR + PCD_FILE)
-
+pcd.scale(30, center=pcd.get_center())
 center = pcd.get_center()  # Obtener centroide
 pcd.translate(-center)  # Mover nube al origen
 
 
 points = np.asarray(pcd.points)
-y_min = np.min(points[:, 1])  # Encuentra el valor mínimo en Y
+x_min = np.min(points[:, 2])  # Encuentra el valor mínimo en Y
 
 
-theta = np.radians(90)  # Convertir grados a radianes
+theta = np.radians(180)  # Convertir grados a radianes
 rotation_matrix_X = np.array([
     [1,0,0],
     [0, np.cos(theta),  np.sin(theta)],
@@ -41,9 +41,9 @@ rotation_matrix_Z = np.array([
 ])
 pcd.rotate(rotation_matrix_X, center=(0, 0, 0))
 
-y_offset = -y_min  # Mover la nube hacia arriba
-pcd.translate((0, y_offset, 0))  # Trasladar solo en Y
-pcd.scale(10.0, center=pcd.get_center())
+x_offset = -x_min  # Mover la nube hacia arriba
+pcd.translate((0,0,-x_offset))  # Trasladar solo en Y
+pcd.paint_uniform_color([1, 0, 0])
 
 o3d.io.write_point_cloud(POINTCLOUD_DIR + OUTPUT_FILE, pcd)
 o3d.visualization.draw_geometries([pcd,axis])

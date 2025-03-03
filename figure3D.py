@@ -65,7 +65,7 @@ def project_point_cloud(frame, camera_matrix, dist_coeffs, point_cloud):
             # Draw projected points on the frame
             for pt in imgpts:
                 x, y = int(pt[0][0]), int(pt[0][1])
-                cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
+                cv2.circle(frame, (x, y), 2, (0, 0, 255), -1)
 
     return frame
 
