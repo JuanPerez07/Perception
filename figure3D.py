@@ -11,8 +11,8 @@ CHESSBOARD_SIZE = (6, 9)  # Internal corners per row and column
 SQUARE_SIZE = 29  # Square size in mm (match calibration)
 
 # PCD file names
-CORTACUELLOS_FILE = POINTCLOUD_DIR + "cortacuellos.pcd"
-CARRAPAX_FILE = POINTCLOUD_DIR + "carrapax_ajustado.pcd"
+CORTACUELLOS_FILE = POINTCLOUD_DIR + "cortacuellos_movido.pcd"
+CARRAPAX_FILE = POINTCLOUD_DIR + "carrapax_movido.pcd"
 
 def load_camera_parameters():
     """Loads intrinsic parameters from PARAM_DIR."""
