@@ -8,73 +8,68 @@ import numpy as np
 MODEL_NAME = "carrapax.stl"
 OUTPUT_FILE = "carrapax.pcd"
 
-def cargar_y_escalar_modelo(ruta_modelo, altura_objetivo=8.0):
+def load_and_scale_model(path, target_height=8.0):
     """
-    Carga un modelo 3D y lo escala para que su altura (eje Z) se aproxime a 'altura_objetivo' (por ejemplo, 8.0 cm).
+    Loads 3D (stl) model and scales to a height reference in Z-axis
     """
-    # Cargar el mesh (soporta STL, OBJ, etc.)
-    mesh = o3d.io.read_triangle_mesh(ruta_modelo)
+    # load the mesh (STL, OBJ, etc.)
+    mesh = o3d.io.read_triangle_mesh(path)
     if mesh.is_empty():
-        raise ValueError(f"No se pudo cargar el modelo desde {ruta_modelo}")
+        raise ValueError(f"Could not load model from {ruta_modelo}")
     
-    # Calcular el bounding box y la altura actual (suponemos que la dimensión Z es la altura)
+    # Compute bbox & current height (Z-axis)
     bbox = mesh.get_axis_aligned_bounding_box()
     dims = bbox.get_extent()
-    altura_actual = dims[2]
+    current_height = dims[2]
     
-    # Calcular el factor de escala (evitar división por cero)
-    if altura_actual == 0:
-        raise ValueError("La altura del modelo es cero. Verifica el modelo 3D.")
-    factor_escala = altura_objetivo / altura_actual
+    # Calculate scale factor (k)
+    if current_height == 0:
+        raise ValueError("Model height is zero.")
+    k = target_height / current_height
     
-    # Aplicar la escala
-    mesh.scale(factor_escala, center=bbox.get_center())
+    # Apply scale factor
+    mesh.scale(k, center=bbox.get_center())
     return mesh
 
-def muestrear_nube_de_puntos(mesh, num_puntos=20000):
+def sample_pcd(mesh, num_points=20000):
     """
-    Muestrea puntos sobre la superficie del mesh usando muestreo Poisson Disk.
+    Sample points on the mesh surface using a Poisson Disk.
     """
-    pcd = mesh.sample_points_poisson_disk(number_of_points=num_puntos)
+    pcd = mesh.sample_points_poisson_disk(number_of_points=num_points)
     return pcd
 
-def guardar_nube_de_puntos(pcd, ruta_salida):
+def save_pcd(pcd, dir):
     """
-    Guarda la nube de puntos en un archivo .pcd.
+    Saves pointcloud in .pcd at the given dir
     """
-    if o3d.io.write_point_cloud(ruta_salida, pcd):
-        print(f"Nube de puntos guardada exitosamente en: {ruta_salida}")
+    if o3d.io.write_point_cloud(dir, pcd):
+        print(f"Pointcloud successfully saved at: {dir}")
     else:
-        print("Error al guardar la nube de puntos.")
+        print("Error saving the pointcloud.")
 
 def main():
-    # Ruta del modelo 3D del caballo (colócalo en la carpeta 'models')
-    ruta_modelo = os.path.join("models", MODEL_NAME)  # o "knight.obj" según tu archivo
+    # Path to the 3D model
+    path = os.path.join("models", MODEL_NAME)  
     
-    # Crear la carpeta de salida si no existe
-    carpeta_salida = "pointcloud"
-    if not os.path.exists(carpeta_salida):
-        os.makedirs(carpeta_salida)
+    # Create the output dir if it does not already exist
+    output_dir = "pointcloud"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
-    # Cargar y escalar el modelo para que tenga una altura de 8.0 (por ejemplo, centímetros)
+    # Load and scale the model
     try:
-        mesh = cargar_y_escalar_modelo(ruta_modelo, altura_objetivo=8.0)
+        mesh = load_and_scale_model(path)
     except Exception as e:
-        print(f"Error al cargar/escalar el modelo: {e}")
+        print(f"Error loading the model: {e}")
         return
     
-    # Opcional: Visualizar el mesh escalado
-    # o3d.visualization.draw_geometries([mesh], window_name="Modelo escalado del Caballo")
+    # Sample the surface to generate the pcd 
+    pcd = sample_pcd(mesh, num_points=20000)
     
-    # Muestrear la superficie para generar la nube de puntos
-    pcd = muestrear_nube_de_puntos(mesh, num_puntos=20000)
+    # Save the .pcd 
+    out_path = os.path.join(output_dir, OUTPUT_FILE)
+    save_pcd(pcd, out_path)
     
-    # Guardar la nube de puntos en formato .pcd
-    ruta_salida = os.path.join(carpeta_salida, OUTPUT_FILE)
-    guardar_nube_de_puntos(pcd, ruta_salida)
-    
-    # Opcional: Visualizar la nube de puntos
-    # o3d.visualization.draw_geometries([pcd], window_name="Nube de puntos del Caballo")
 
 if __name__ == "__main__":
     main()
