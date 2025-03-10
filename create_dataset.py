@@ -1,38 +1,42 @@
+"""
+Code to create a dataset based on photos made with the webCam
+"""
 import cv2
 import os
 
-carpeta = "dataset"
+# Folder where images will be saved
+folder = "dataset"
 
-# Inicializar la cámara
+# Initialize the camera (0 for the default camera)
 cap = cv2.VideoCapture(0)
 
-# Contador para los nombres de archivo
-contador = 1
+# Counter for naming saved image files
+counter = 1
 
-# Crear una ventana
-cv2.namedWindow("Presiona 'c' para capturar - 'q' para salir")
+# Create a window with instructions
+cv2.namedWindow("Press 'c' to capture - 'q' to exit")
 
 while True:
-    # Capturar frame
+    # Capture a frame from the camera
     ret, frame = cap.read()
     if not ret:
-        break
+        break  # Exit the loop if the frame is not captured properly
     
-    # Mostrar el frame en la ventana
-    cv2.imshow("Presiona 'c' para capturar - 'q' para salir", frame)
+    # Display the captured frame in the window
+    cv2.imshow("Press 'c' to capture - 'q' to exit", frame)
 
-    # Capturar la tecla presionada
+    # Capture the pressed key
     key = cv2.waitKey(1) & 0xFF
 
-    if key == ord('c'):  # Si se presiona 'c'
-        filename = os.path.join(carpeta, f"{contador}.png")  # Ruta completa
-        cv2.imwrite(filename, frame)  # Guardar la imagen
-        print(f"Imagen guardada como {filename}")
-        contador += 1  # Incrementar el contador
+    if key == ord('c'):  # If 'c' is pressed, capture the image
+        filename = os.path.join(folder, f"{counter}.png")  # Generate the full file path
+        cv2.imwrite(filename, frame)  # Save the image to the specified folder
+        print(f"Image saved as {filename}")
+        counter += 1  # Increment the file counter for the next image
 
-    elif key == ord('q'):  # Si se presiona 'q', salir
+    elif key == ord('q'):  # If 'q' is pressed, exit the loop
         break
 
-# Liberar la cámara y cerrar ventanas
+# Release the camera and close all OpenCV windows
 cap.release()
 cv2.destroyAllWindows()
