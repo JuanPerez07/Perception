@@ -1,3 +1,8 @@
+""" 
+This script performs camera calibration using images of a chessboard pattern.
+It calculates and saves the camera's intrinsic and extrinsic parameters and evaluates 
+the reprojection error to measure calibration accuracy.
+"""
 import cv2
 import numpy as np
 import glob
@@ -26,31 +31,37 @@ imgpoints = []  # 2D image points
 
 def calculate_params(images):
     """ Calculates and saves the intrinsic and extrinsic parameters of the camera. """
+    
+    # Read the first image to get its size
     img = cv2.imread(images[0])
     height, width = img.shape[:2]
     image_shape = (width, height)  # OpenCV expects (width, height)
 
     for fname in images:
         img = cv2.imread(fname)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
 
+        # Detect chessboard corners
         ret, corners = cv2.findChessboardCorners(gray, CHESSBOARD_SIZE, None)
 
         if ret:
-            objpoints.append(objp)
-            refined_corners = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-            imgpoints.append(refined_corners)
+            objpoints.append(objp)  # Store 3D points
+            refined_corners = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)  
+            imgpoints.append(refined_corners)  # Store 2D points
 
+    # Camera calibration
     ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
         objpoints, imgpoints, image_shape, None, None
     )
 
+    # Compute extrinsic parameters for each image
     extrinsics = []
     for i in range(min(len(rvecs), len(tvecs))):
         R, _ = cv2.Rodrigues(rvecs[i])
-        T = np.hstack((R, tvecs[i]))  # [R | t] matrix
+        T = np.hstack((R, tvecs[i]))  # [R | t] transformation matrix
         extrinsics.append(T)
 
+    # Save parameters to files
     np.save(PARAM_DIR + "camera_matrix.npy", camera_matrix)
     np.save(PARAM_DIR + "dist_coeffs.npy", dist_coeffs)
     np.save(PARAM_DIR + "extrinsics.npy", extrinsics)
@@ -59,33 +70,37 @@ def calculate_params(images):
 
 def compute_error(objpoints, imgpoints):
     """ Computes the reprojection error using stored calibration parameters. """
+
+    # Load calibration parameters
     camera_matrix = np.load(PARAM_DIR + "camera_matrix.npy")
     dist_coeffs = np.load(PARAM_DIR + "dist_coeffs.npy")
     extrinsics = np.load(PARAM_DIR + "extrinsics.npy", allow_pickle=True)
 
     total_error = 0
     for i in range(len(objpoints)):
-        R = extrinsics[i][:, :3]
-        t = extrinsics[i][:, 3]
+        R = extrinsics[i][:, :3]  # Extract rotation matrix
+        t = extrinsics[i][:, 3]   # Extract translation vector
         rvec, _ = cv2.Rodrigues(R)
 
+        # Project 3D points back onto the 2D image plane
         imgpoints2, _ = cv2.projectPoints(objpoints[i], rvec, t, camera_matrix, dist_coeffs)
-        error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)
+        error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)  # Compute error
         total_error += error
 
-    mean_error = total_error / len(objpoints)
+    mean_error = total_error / len(objpoints)  # Compute mean reprojection error
     return mean_error
 
 if __name__ == '__main__':
     print("Calculating camera parameters...")
-    
+
+    # Get all image file paths
     images = glob.glob(DATA_DIR + IMG_FORMAT)
-    
+
     if not images:
         print(" No images found in dataset directory!")
         exit()
 
+    # Perform calibration and compute error
     img_points, obj_points = calculate_params(images)
     error = compute_error(img_points, obj_points)
     print(f" Mean Reprojection Error: {error}")
-
