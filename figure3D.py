@@ -61,8 +61,8 @@ def load_point_clouds():
     # Apply XY offset to carrapax, Z remains unchanged
     carrapax_points[:, :2] += offset_vector[:2]
 
-    print(f"✅ Loaded {cortacuellos_points.shape[0]} points from '{CORTACUELLOS_FILE}'")
-    print(f"✅ Loaded {carrapax_points.shape[0]} points from '{CARRAPAX_FILE}', moved by {offset_vector[:2]} in XY plane")
+    print(f" Loaded {cortacuellos_points.shape[0]} points from '{CORTACUELLOS_FILE}'")
+    print(f" Loaded {carrapax_points.shape[0]} points from '{CARRAPAX_FILE}', moved by {offset_vector[:2]} in XY plane")
 
     return cortacuellos_points, carrapax_points
 
@@ -93,7 +93,7 @@ def project_point_clouds(frame, camera_matrix, dist_coeffs, point_cloud_1, point
 
 def overlay_pointclouds_live():
     """Captures video feed and overlays two projected point clouds in real-time."""
-    print("📷 Starting video capture with 3D point cloud overlay...")
+    print(" Starting video capture with 3D point cloud overlay...")
     camera_matrix, dist_coeffs = load_camera_parameters()
     point_cloud_1, point_cloud_2 = load_point_clouds()
 
