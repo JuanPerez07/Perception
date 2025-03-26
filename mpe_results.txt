@@ -1,0 +1,46 @@
+Calculating camera calibration with 2 images from the dataset
+ Mean Reprojection Error: 0.01373834087731849
+Calculating camera calibration with 3 images from the dataset
+ Mean Reprojection Error: 0.015032648252873185
+Calculating camera calibration with 4 images from the dataset
+ Mean Reprojection Error: 0.015766440472710426
+Calculating camera calibration with 5 images from the dataset
+ Mean Reprojection Error: 0.07885254705022207
+Calculating camera calibration with 6 images from the dataset
+ Mean Reprojection Error: 0.06884594031646933
+Calculating camera calibration with 7 images from the dataset
+ Mean Reprojection Error: 0.06255514122714587
+Calculating camera calibration with 8 images from the dataset
+ Mean Reprojection Error: 0.05750867942941799
+Calculating camera calibration with 9 images from the dataset
+ Mean Reprojection Error: 0.0532262210227153
+Calculating camera calibration with 10 images from the dataset
+ Mean Reprojection Error: 0.04975045132589112
+Calculating camera calibration with 2 images from the dataset
+ Mean Reprojection Error: 0.01373834087731849
+Calculating camera calibration with 3 images from the dataset
+ Mean Reprojection Error: 0.015032648252873185
+Calculating camera calibration with 4 images from the dataset
+ Mean Reprojection Error: 0.015766440472710426
+Calculating camera calibration with 5 images from the dataset
+ Mean Reprojection Error: 0.07885254705022207
+Calculating camera calibration with 6 images from the dataset
+ Mean Reprojection Error: 0.06884594031646933
+Calculating camera calibration with 7 images from the dataset
+ Mean Reprojection Error: 0.06255514122714587
+Calculating camera calibration with 8 images from the dataset
+ Mean Reprojection Error: 0.05750867942941799
+Calculating camera calibration with 9 images from the dataset
+ Mean Reprojection Error: 0.0532262210227153
+Calculating camera calibration with 10 images from the dataset
+ Mean Reprojection Error: 0.04975045132589112
+Calculating camera calibration with 11 images from the dataset
+ Mean Reprojection Error: 0.04710699680562316
+Calculating camera calibration with 12 images from the dataset
+ Mean Reprojection Error: 0.04500316739955255
+Calculating camera calibration with 13 images from the dataset
+ Mean Reprojection Error: 0.04273790031015226
+Calculating camera calibration with 14 images from the dataset
+ Mean Reprojection Error: 0.041351638983012036
+Calculating camera calibration with 15 images from the dataset
+ Mean Reprojection Error: 0.04020074077369102
