@@ -2,8 +2,9 @@
 
 # Check different batches to check the fluctuation 
 # of the Mean Reprojection Error
-
-for i in {2..15}  # Loops from 2 to 15
+MIN_BATCH=5
+for i in {0..10}  # Loops 10 times
 do
-    python3 main.py $i >> mpe_results.txt
+    batch=$((i + MIN_BATCH))
+    python3 main.py $batch >> mpe_results.txt
 done
