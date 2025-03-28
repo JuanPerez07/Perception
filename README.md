@@ -52,5 +52,5 @@ pip install numpy opencv-python open3d
 
 ---
 
-## **Author & License** 📝
-Developed by **Aitor Ruiz Bautista and Juan Pérez Fernández**.
+## **Authors** 📝
+Developed by **Aitor Ruiz Bautista** and **Juan Pérez Fernández**.
