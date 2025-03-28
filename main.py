@@ -11,7 +11,8 @@ import sys # to read argv
 # Dataset directory and image format
 DATA_DIR = "dataset"
 IMG_FORMAT = "/*.png"
-DATASET_MAX = 5 # maximum size of the dataset used
+DATASET_MAX = 15 # maximum size of the dataset
+MIN_BATCH = 5 # minimum batch possible
 # Camera parameter directory
 PARAM_DIR = "params/"
 
@@ -109,7 +110,7 @@ if __name__ == '__main__':
         exit()
 
     # Perform calibration depending on dataset batch (if not is default 15)
-    if dataset_reg:
+    if dataset_reg and dataset_size <= 15 and dataset_size >= MIN_BATCH:
         img_points, obj_points = calculate_params(images, dataset_size)
     else:
         img_points, obj_points = calculate_params(images)
