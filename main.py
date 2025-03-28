@@ -99,7 +99,7 @@ def compute_error(objpoints, imgpoints):
 
 if __name__ == '__main__':
     dataset_reg = False;
-    if len(sys.argv) >= 1:
+    if len(sys.argv) > 1:
         dataset_size = int(sys.argv[1])
         dataset_reg = True
     # Get all image file paths
