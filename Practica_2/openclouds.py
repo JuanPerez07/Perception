@@ -8,3 +8,4 @@ OBJ_NAME=POINTCLOUD_DIR+CLOUD_NAME
 pcd = o3d.io.read_point_cloud(OBJ_NAME)
 
 o3d.visualization.draw_geometries([pcd])
+https://prod.liveshare.vsengsaas.visualstudio.com/join?3D6E5DAFECF5D69B3C50533232F81963B942
