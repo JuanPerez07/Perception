@@ -40,4 +40,4 @@ normals /= np.linalg.norm(normals, axis=1, keepdims=True)
 # Apply plane removal
 filtered_pcd = remove_planes(pcd)
 o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
-o3d.io.write_point_cloud(OUTPUT_DIR + "resultados.ply", pcd)
+o3d.io.write_point_cloud(OUTPUT_DIR + "resultados.ply", filtered_pcd)
