@@ -1,4 +1,4 @@
-# Camera Calibration Project 📷🔍
+# Practica 1: Camera Calibration 📷🔍
 
 This project performs **camera calibration** using the chessboard pattern and **point cloud projection** for 3D vision applications. It includes tools for dataset collection, calibration processing, point cloud generation, and evaluation of calibration results.
 
@@ -7,7 +7,7 @@ This project performs **camera calibration** using the chessboard pattern and **
 ## **Project Structure** 📂
 
 ```
-📦 Camera_Calibration_Project
+📦 Practica_1
 ├── main.py                 # Main script for camera calibration
 ├── generate_pcd.py         # Converts STL model surface into a point cloud (.pcd)
 ├── create_dataset.py       # Captures images of the calibration pattern using a webcam
