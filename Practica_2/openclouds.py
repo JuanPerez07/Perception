@@ -9,7 +9,7 @@ pcd = o3d.io.read_point_cloud(OBJ_NAME)
 OUTPUT_DIR="clouds/scenes/"
 
 # function to remove the planes using RANSAC
-def remove_planes(pcd, threshold=0.02, iterations=1000, max_planes=3):
+def remove_planes(pcd, threshold=0.01, iterations=1000, max_planes=5):
     remaining_pcd = pcd
     for _ in range(max_planes):
         plane_model, inliers = remaining_pcd.segment_plane(distance_threshold=threshold,
@@ -40,4 +40,4 @@ normals /= np.linalg.norm(normals, axis=1, keepdims=True)
 # Apply plane removal
 filtered_pcd = remove_planes(pcd)
 o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
-o3d.io.write_point_cloud(OUTPUT_DIR + "resultados.ply", filtered_pcd)
+#o3d.io.write_point_cloud(OUTPUT_DIR + "resultados.ply", filtered_pcd)
