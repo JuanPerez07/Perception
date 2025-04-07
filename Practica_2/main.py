@@ -53,7 +53,7 @@ if __name__ == '__main__':
         epsilon_reg = True
 
     #o3d.io.write_point_cloud(OUTPUT_DIR + "original.ply", pcd)
-
+    pcd = pcd.voxel_down_sample(voxel_size=0.01)
     # Estimate normals
     pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.25, max_nn=10))
 
@@ -82,4 +82,4 @@ if __name__ == '__main__':
     file_name = OUTPUT_DIR + "epsilon_" + str(epsilon) + "_resultados.ply"
     print(f"Saved the coloured pcd named <{file_name}> in {OUTPUT_DIR}")
     o3d.io.write_point_cloud(file_name, pcd)
-
+    o3d.visualization.draw_geometries([pcd], window_name="Filtered with Hough-like Normals")
