@@ -61,5 +61,8 @@ if __name__ == '__main__':
     else:
         filtered_pcd = remove_planes_using_clustering(pcd)
 
-    #o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
+    o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
     o3d.io.write_point_cloud(OUTPUT_DIR + "epsilon" + str(epsilon) + "resultados.ply", filtered_pcd)
+
+
+    https://prod.liveshare.vsengsaas.visualstudio.com/join?509D13B55A87D01C3900E33A5E79CA15276F
