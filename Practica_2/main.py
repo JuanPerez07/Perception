@@ -2,6 +2,8 @@ import open3d as o3d
 import numpy as np
 import sys
 from sklearn.cluster import DBSCAN
+import matplotlib.pyplot as plt
+
 
 POINTCLOUD_DIR = "clouds/scenes/"
 CLOUD_NAME = "snap_0point.pcd"
@@ -54,15 +56,35 @@ if __name__ == '__main__':
 
     # Estimate normals
     pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.05, max_nn=30))
-
+    """
     # Apply clustering-based plane removal
     if epsilon_reg:
         filtered_pcd = remove_planes_using_clustering(pcd, epsilon)
     else:
         filtered_pcd = remove_planes_using_clustering(pcd)
+    """
+    # Obtener las normales
+    norms = np.asarray(pcd.normals)
+    # Normalizar para asegurar unidad
+    norms /= np.linalg.norm(norms, axis=1, keepdims=True)
 
-    o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
-    o3d.io.write_point_cloud(OUTPUT_DIR + "epsilon" + str(epsilon) + "resultados.ply", filtered_pcd)
+    # Aplicar clustering a las normales con DBSCAN para encontrar grupos de orientaciones similares (como en Hough)
+    clustering = DBSCAN(eps=0.1, min_samples=50).fit(norms)
+    labels = clustering.labels_
+
+    # Visualizar cada grupo como un posible plano
+    max_label = labels.max()
+    print(f"Se encontraron {max_label + 1} posibles planos")
+
+    # Colorear la nube según el plano detectado
+    colors = plt.get_cmap("tab20")(labels / (max_label + 1 if max_label > 0 else 1))
+    colors[labels < 0] = [0, 0, 0, 1]  # Color negro para outliers
+    pcd.colors = o3d.utility.Vector3dVector(colors[:, :3])
+
+    o3d.visualization.draw_geometries([pcd], window_name="Planos detectados (simulación Hough)")
+
+    #o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
+    #o3d.io.write_point_cloud(OUTPUT_DIR + "epsilon" + str(epsilon) + "resultados.ply", filtered_pcd)
 
 
-    https://prod.liveshare.vsengsaas.visualstudio.com/join?509D13B55A87D01C3900E33A5E79CA15276F
+    #https://prod.liveshare.vsengsaas.visualstudio.com/join?509D13B55A87D01C3900E33A5E79CA15276F
