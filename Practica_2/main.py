@@ -55,23 +55,17 @@ if __name__ == '__main__':
     #o3d.io.write_point_cloud(OUTPUT_DIR + "original.ply", pcd)
 
     # Estimate normals
-    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.05, max_nn=30))
-    """
-    # Apply clustering-based plane removal
-    if epsilon_reg:
-        filtered_pcd = remove_planes_using_clustering(pcd, epsilon)
-    else:
-        filtered_pcd = remove_planes_using_clustering(pcd)
-    """
+    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.25, max_nn=10))
+
     # Obtener las normales
     norms = np.asarray(pcd.normals)
     # Normalizar para asegurar unidad
     norms /= np.linalg.norm(norms, axis=1, keepdims=True)
-
+    print("Normales calculadas")
     # Aplicar clustering a las normales con DBSCAN para encontrar grupos de orientaciones similares (como en Hough)
-    clustering = DBSCAN(eps=0.1, min_samples=50).fit(norms)
+    clustering = DBSCAN(eps=epsilon, min_samples=50).fit(norms)
     labels = clustering.labels_
-
+    print("Clustering hecho")
     # Visualizar cada grupo como un posible plano
     max_label = labels.max()
     print(f"Se encontraron {max_label + 1} posibles planos")
@@ -80,11 +74,12 @@ if __name__ == '__main__':
     colors = plt.get_cmap("tab20")(labels / (max_label + 1 if max_label > 0 else 1))
     colors[labels < 0] = [0, 0, 0, 1]  # Color negro para outliers
     pcd.colors = o3d.utility.Vector3dVector(colors[:, :3])
+    print("Coloreando nube de puntos")
 
-    o3d.visualization.draw_geometries([pcd], window_name="Planos detectados (simulación Hough)")
+    #o3d.visualization.draw_geometries([pcd], window_name="Planos detectados (simulación Hough)")
 
     #o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
-    #o3d.io.write_point_cloud(OUTPUT_DIR + "epsilon" + str(epsilon) + "resultados.ply", filtered_pcd)
+    file_name = OUTPUT_DIR + "epsilon_" + str(epsilon) + "_resultados.ply"
+    print(f"Saved the coloured pcd named <{file_name}> in {OUTPUT_DIR}")
+    o3d.io.write_point_cloud(file_name, pcd)
 
-
-    #https://prod.liveshare.vsengsaas.visualstudio.com/join?509D13B55A87D01C3900E33A5E79CA15276F
