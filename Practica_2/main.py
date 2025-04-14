@@ -66,24 +66,25 @@ def deteccion_keypoints_iss(pcd_scene):
 
     """Obtener descriptores de la escena mediante FPFH"""
     key_scene_fpfh=descriptores_fpfh(key_scene,pcd_scene,voxel_size)
-
+    print("FPFH",key_scene_fpfh)
 
 
     """Obtener keypoints de los objetos"""
    
     piggy_pcd=o3d.io.read_point_cloud(PIGGY)
-    piggy_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01,max_nn=30))
     piggy_pcd=piggy_pcd.voxel_down_sample(voxel_size=voxel_size)#Bien porque si es menos hay pocos kypoints
-    keypoints=o3d.geometry.keypoint.compute_iss_keypoints(piggy_pcd,
+    piggy_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01,max_nn=30))
+
+    key_piggy=o3d.geometry.keypoint.compute_iss_keypoints(piggy_pcd,
                                                           salient_radius=0.005,
                                                           non_max_radius=0.005,
                                                           gamma_21=0.5,
                                                           gamma_32=0.5)
-
+    piggy_fpfh=descriptores_fpfh(key_piggy,piggy_pcd,voxel_size)
     #keypoints.paint_uniform_color([0,0,1]) 
-    keypoints=keypoints_to_spheres(keypoints)#Mejorar visualmente los Kypoins
+    key_piggy=keypoints_to_spheres(key_piggy)#Mejorar visualmente los Kypoins
     piggy_pcd.paint_uniform_color([1,0,0]) #ver mejor el objeto con los key
-    o3d.visualization.draw_geometries([keypoints,piggy_pcd])
+    o3d.visualization.draw_geometries([key_piggy,piggy_pcd])
 
 #Ver los keypoints mejor en esferas 
 def keypoints_to_spheres(keypoints):
