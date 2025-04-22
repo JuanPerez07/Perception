@@ -1,2 +1,3 @@
 # ignorar todos los .ply
 /clouds/scenes/*.ply
+/clouds/objects/*.ply
