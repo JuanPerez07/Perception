@@ -136,7 +136,7 @@ def descript_fpfh(key, pcd, voxel_size=0.005):
 """
 Compute the matching between descriptors using KDTreeFlann and RANSAC
 """
-def matching(desc_scene, desc_obj, key_scene, key_obj, distance_threshold=0.05):
+def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.05):
     desc_scene_np = np.asarray(desc_scene).T
     desc_obj_np = np.asarray(desc_obj).T
 
@@ -153,22 +153,22 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, distance_threshold=0.05):
     # guardar los matching en un .ply
     exportar_correspondencias_a_obj(key_obj, key_scene, corres)
     # params ajustar correspondencias
-    edge_length = 0.4
-    normal_angle_thres = math.pi / 3 # 60 degrees
-    distance_threshold = 0.015
+    edge_length = 0.3
+    normal_angle_thres = math.pi / 4 # 60 degrees
+    distance_threshold = 0.75
     result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
         key_obj,  # objeto = source
         key_scene,  # escena = target
         corres,
-        max_correspondence_distance=distance_threshold,
+        max_correspondence_distance=max_dist,
         estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
-        ransac_n=3,
+        ransac_n=4,
         checkers=[
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(edge_length),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnNormal(normal_angle_thres)
         ],
-        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(10000, 1500)
+        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(10000, 1000)
     )
 
     return result
