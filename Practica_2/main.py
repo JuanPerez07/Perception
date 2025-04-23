@@ -1,6 +1,6 @@
 import open3d as o3d  # type: ignore
 import numpy as np
-# from sklearn.cluster import DBSCAN
+import math
 import matplotlib.pyplot as plt
 
 # DIR SCENES
@@ -111,16 +111,16 @@ def keypoints_to_spheres(keypoints):
 Compute the FPFH descriptor for a given pcd and the list of keypoints from ISS
 """
 def descript_fpfh(key, pcd, voxel_size=0.005):
-    radius_feature = voxel_size * 5  # neighbourhood size
+    radius_feature = voxel_size * 3  # neighbourhood size
 
     # Estimar normales si no existen
     if not pcd.has_normals():
-        pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
+        pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=15))
 
     # Calcular FPFH para toda la nube
     fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         pcd,
-        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100)
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=15)
     )
 
     # Para cada punto en keypoints, encontrar su índice más cercano en pcd
@@ -152,7 +152,10 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, distance_threshold=0.05):
 
     # guardar los matching en un .ply
     exportar_correspondencias_a_obj(key_obj, key_scene, corres)
-
+    # params ajustar correspondencias
+    edge_length = 0.4
+    normal_angle_thres = math.pi / 3 # 60 degrees
+    distance_threshold = 0.015
     result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
         key_obj,  # objeto = source
         key_scene,  # escena = target
@@ -161,10 +164,11 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, distance_threshold=0.05):
         estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
         ransac_n=3,
         checkers=[
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(edge_length),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnNormal(normal_angle_thres)
         ],
-        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 100)
+        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(10000, 1500)
     )
 
     return result
