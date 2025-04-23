@@ -143,9 +143,9 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.05):
     kdtree = o3d.geometry.KDTreeFlann(desc_scene_np.T)
 
     correspondences = []
-
+    nn = 5 # max nearest neighbours searched for matching
     for i, desc in enumerate(desc_obj_np):
-        [_, idx, _] = kdtree.search_knn_vector_xd(desc, 1)
+        [_, idx, _] = kdtree.search_knn_vector_xd(desc, nn)
         correspondences.append([i, idx[0]])
 
     corres = o3d.utility.Vector2iVector(correspondences)
@@ -153,16 +153,16 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.05):
     # guardar los matching en un .ply
     exportar_correspondencias_a_obj(key_obj, key_scene, corres)
     # params ajustar correspondencias
-    edge_length = 0.3
-    normal_angle_thres = math.pi / 4 # 60 degrees
-    distance_threshold = 0.75
+    edge_length = 0.65
+    normal_angle_thres = math.pi / 4 # 45 degrees
+    distance_threshold = 0.25
     result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
         key_obj,  # objeto = source
         key_scene,  # escena = target
         corres,
         max_correspondence_distance=max_dist,
         estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
-        ransac_n=4,
+        ransac_n=3,
         checkers=[
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(edge_length),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold),
@@ -270,4 +270,4 @@ if __name__ == '__main__':
     print("Matching done with KDTreeFlann and RANSAC")
     # nube de puntos de la escena con el objeto detectado
     insertar_objeto_en_escena(og_scene_pcd, piggy_pcd, match_result.transformation)
-    print("PCD final computed")
+    print("Program successfully terminated")
