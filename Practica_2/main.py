@@ -1,3 +1,4 @@
+https://prod.liveshare.vsengsaas.visualstudio.com/join?FC7EB7C15CD00773449485177F1C6DC228FC
 import open3d as o3d  # type: ignore
 import numpy as np
 import math
