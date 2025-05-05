@@ -1,4 +1,3 @@
-https://prod.liveshare.vsengsaas.visualstudio.com/join?FC7EB7C15CD00773449485177F1C6DC228FC
 import open3d as o3d  # type: ignore
 import numpy as np
 import math
@@ -54,22 +53,27 @@ Detect the keypoints of an object and its scene using ISS
 def detect_keypoints_iss(pcd_scene, pcd_object):
     # Estimación de normales de la escena
     pcd_scene.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
+    #Obtener distancia para ajustar mejor los radios de ISS
+    distance=pcd_scene.compute_nearest_neighbor_distance()
+    resolution=np.mean(distance)
+    print(f"Resolucion {resolution}")
     # Calculo keypoints escena por ISS
     key_scene = o3d.geometry.keypoint.compute_iss_keypoints(
         pcd_scene,
-        salient_radius=0.005,
-        non_max_radius=0.005,
+        salient_radius=0.008,
+        non_max_radius=0.0085,
         gamma_21=0.5,
-        gamma_32=0.5,
+        gamma_32=0.5
     )
     # pintar los keypoints
     key_scene.paint_uniform_color([1, 0, 1])
     pcd_scene.paint_uniform_color([0, 0.5, 0.5])
+    o3d.visualization.draw_geometries([key_scene,pcd_scene], 'Keypoints escena')
     #print("Keypoints de la escena detectados")
 
     # Guardar escena y keypoints
-    o3d.io.write_point_cloud(f"{OUTPUT_DIR}scene_downsampled.ply", pcd_scene)
-    o3d.io.write_point_cloud(f"{OUTPUT_DIR}scene_keypoints.ply", key_scene)
+    #o3d.io.write_point_cloud(f"{OUTPUT_DIR}scene_downsampled.ply", pcd_scene)
+    #o3d.io.write_point_cloud(f"{OUTPUT_DIR}scene_keypoints.ply", key_scene)
 
     # OBJETO: PIGGYBANK
     piggy_pcd = pcd_object
@@ -79,34 +83,22 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
     # Calculo de keypoints por ISS
     key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
         piggy_pcd,
-        salient_radius=0.005,
-        non_max_radius=0.005,
+        salient_radius=0.008,
+        non_max_radius=0.008,
         gamma_21=0.5,
         gamma_32=0.5
     )
-    o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
-    """
-    # reducir keypoints a esferas
-    key_piggy = keypoints_to_spheres(key_piggy)
-    piggy_pcd.paint_uniform_color([1, 0, 0])
-    # o3d.visualization.draw_geometries([key_piggy, piggy_pcd])
-    o3d.io.write_triangle_mesh(f"{OBJ_DIR}piggy_keypoints_spheres.ply", key_piggy)
-    """
+    #o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
+    
+
     print("Keypoints detected with ISS for scene and object")
+
+    key_piggy.paint_uniform_color([1, 0, 1])
+    piggy_pcd.paint_uniform_color([0, 0.5, 0.5])
+    #o3d.visualization.draw_geometries([key_piggy,piggy_pcd],'Key de figura')
     # Return the scene and object keypoints
     return key_scene, key_piggy
 
-"""
-Simplify the keypoints into clustered spheres using a TriangleMesh 
-"""
-def keypoints_to_spheres(keypoints):
-    spheres = o3d.geometry.TriangleMesh()
-    for keypoint in keypoints.points:
-        sphere = o3d.geometry.TriangleMesh.create_sphere(radius=0.01)
-        sphere.translate(keypoint)
-        spheres += sphere
-    spheres.paint_uniform_color([1.0, 0.75, 0.0])
-    return spheres
 
 """
 Compute the FPFH descriptor for a given pcd and the list of keypoints from ISS
@@ -137,7 +129,7 @@ def descript_fpfh(key, pcd, voxel_size=0.005):
 """
 Compute the matching between descriptors using KDTreeFlann and RANSAC
 """
-def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.05):
+def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.025):
     desc_scene_np = np.asarray(desc_scene).T
     desc_obj_np = np.asarray(desc_obj).T
 
@@ -154,9 +146,9 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.05):
     # guardar los matching en un .ply
     exportar_correspondencias_a_obj(key_obj, key_scene, corres)
     # params ajustar correspondencias
-    edge_length = 0.65
-    normal_angle_thres = math.pi / 4 # 45 degrees
-    distance_threshold = 0.25
+    edge_length = 0.45
+    normal_angle_thres = math.pi / 8 # algo degrees
+    distance_threshold = 0.16
     result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
         key_obj,  # objeto = source
         key_scene,  # escena = target
@@ -169,7 +161,7 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.05):
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnNormal(normal_angle_thres)
         ],
-        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(10000, 1000)
+        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500)
     )
 
     return result
@@ -203,7 +195,7 @@ def visualizar_correspondencias(kp_obj, kp_scene, correspondences):
     line_set.colors = o3d.utility.Vector3dVector(colors)
 
     # Mostrar
-    #o3d.visualization.draw_geometries([kp_obj, kp_scene, line_set])
+    o3d.visualization.draw_geometries([kp_obj, kp_scene, line_set])
 """
 Guardar matches para visualizar con CloudCompare
 """
@@ -232,14 +224,17 @@ def exportar_correspondencias_a_obj(kp_obj, kp_scene, correspondences, file_path
 Insertar en la nube de puntos de la escena el objeto usando la matriz R | t
 """
 def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
+
     # Hacemos una copia del objeto para no modificar el original
     obj_transformado = obj_pcd.transform(transformation_matrix.copy())
 
+    obj_transformado.paint_uniform_color([1 ,0,1])
     # Combinar ambas nubes
     escena_completa = scene_pcd + obj_transformado
 
     # Guardamos o retornamos la nube combinada
     o3d.io.write_point_cloud(f"{OUTPUT_DIR}objeto_inyectado_en_escena.ply", escena_completa)
+    o3d.visualization.draw_geometries([escena_completa],'Final')
     #return escena_completa
 
 if __name__ == '__main__':
@@ -248,16 +243,19 @@ if __name__ == '__main__':
     og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
-    # Remove the main planes of the scene to reduce computational load
-    scene_pcd = remove_planes_using_ransac(og_scene_pcd)
- 
     # downsample the pcd
     vx_size = 0.005
-    scene_pcd = downsample_pcd(scene_pcd, vx_size)
+    scene_pcd = downsample_pcd(og_scene_pcd, vx_size)
+
+    # Remove the main planes of the scene to reduce computational load
+    scene_pcd = remove_planes_using_ransac(scene_pcd)
+ 
+    
     #piggy_pcd = downsample_pcd(piggy_pcd, vx_size)
 
     # o3d.visualization.draw_geometries([pcd_scene], 'Nube sin planos y con voxel')
     o3d.io.write_point_cloud(f"{OUTPUT_DIR}original_sin_planos.ply", scene_pcd)
+    #o3d.visualization.draw_geometries([scene_pcd],'Nube de puntos cambiado')
 
     # Compute the keypoints for scene and object
     kp_scene, kp_obj = detect_keypoints_iss(scene_pcd,piggy_pcd)
