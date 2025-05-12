@@ -79,11 +79,19 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
     # Estimar normales
     piggy_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
     
-    # Calculo de keypoints por ISS
+    """ Calculo de keypoints para piggy 
     key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
         piggy_pcd,
         salient_radius=0.008,
-        non_max_radius=0.007,
+        non_max_radius=0.008,
+        gamma_21=0.5,
+        gamma_32=0.5
+    )
+    """
+    key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
+        piggy_pcd,
+        salient_radius=0.008,
+        non_max_radius=0.008,
         gamma_21=0.5,
         gamma_32=0.5
     )
@@ -238,7 +246,7 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
 
 if __name__ == '__main__':
     # load both scene and objects pcds
-    piggy_pcd = o3d.io.read_point_cloud(MUG) # object
+    piggy_pcd = o3d.io.read_point_cloud(PIGGY) # object
     og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
