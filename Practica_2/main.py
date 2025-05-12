@@ -29,18 +29,25 @@ PLANOS = 3
 Remove planes using RANSAC
 """
 def remove_planes_using_ransac(pcd):
+    threshold=0.03
     for i in range(PLANOS):
+        
         # detect a plane in the cloud
+        if i==2:
+            threshold=0.017
+        else:
+            threshold=0.03
         _, inliers = pcd.segment_plane(
-                distance_threshold=0.03,  # distancia máxima entre un punto y el plano para considerarlo parte de él
-                ransac_n=4,               # número de puntos aleatorios usados para estimar un plano
+                distance_threshold=threshold,  # distancia máxima entre un punto y el plano para considerarlo parte de él
+                ransac_n=3,               # número de puntos aleatorios usados para estimar un plano
                 num_iterations=1000       # número de iteraciones para encontrar el mejor plano
         )
         # keep only the outliers
         pcd = pcd.select_by_index(inliers, invert=True)
         # save the pcd without the inliers (only outliers)
         o3d.io.write_point_cloud(f"{OUTPUT_DIR}step_ransac_{i}.ply", pcd)
-
+        
+    o3d.visualization.draw_geometries([pcd],'Ver')
     return pcd
 """
 Downsample using voxelgrid
@@ -90,10 +97,10 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
     """
     key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
         piggy_pcd,
-        salient_radius=0.008,
-        non_max_radius=0.008,
-        gamma_21=0.5,
-        gamma_32=0.5
+        salient_radius=0.008,#radio de vecindad
+        non_max_radius=0.0055,#filtro para que no estén super cerca
+        gamma_21=0.66,#cambios en la curvatura
+        gamma_32=0.66#cambio de curvatura en otra direccion
     )
     #o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
     
