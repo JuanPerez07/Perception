@@ -53,10 +53,8 @@ Detect the keypoints of an object and its scene using ISS
 def detect_keypoints_iss(pcd_scene, pcd_object):
     # Estimación de normales de la escena
     pcd_scene.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
-    #Obtener distancia para ajustar mejor los radios de ISS
-    distance=pcd_scene.compute_nearest_neighbor_distance()
-    resolution=np.mean(distance)
-    print(f"Resolucion {resolution}")
+    
+   
     # Calculo keypoints escena por ISS
     key_scene = o3d.geometry.keypoint.compute_iss_keypoints(
         pcd_scene,
@@ -84,7 +82,7 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
     key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
         piggy_pcd,
         salient_radius=0.008,
-        non_max_radius=0.008,
+        non_max_radius=0.007,
         gamma_21=0.5,
         gamma_32=0.5
     )
@@ -95,7 +93,7 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
 
     key_piggy.paint_uniform_color([1, 0, 1])
     piggy_pcd.paint_uniform_color([0, 0.5, 0.5])
-    #o3d.visualization.draw_geometries([key_piggy,piggy_pcd],'Key de figura')
+    o3d.visualization.draw_geometries([key_piggy,piggy_pcd],'Key de figura')
     # Return the scene and object keypoints
     return key_scene, key_piggy
 
@@ -239,7 +237,7 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
 
 if __name__ == '__main__':
     # load both scene and objects pcds
-    piggy_pcd = o3d.io.read_point_cloud(PIGGY) # object
+    piggy_pcd = o3d.io.read_point_cloud(MUG) # object
     og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
