@@ -7,8 +7,11 @@ import matplotlib.pyplot as plt
 # DIR SCENES
 POINTCLOUD_DIR = "clouds/scenes/"
 SCENE_NAME = "snap_0point.pcd"
+PEPPER_POINTCLOUD_DIR="pepper_scene/"
+PEPPER_SCENE_NAME="pcd_21.pcd"
 ORIGINAL_CLOUD = POINTCLOUD_DIR + SCENE_NAME
 OUTPUT_DIR = "clouds/scenes/"
+PEPPER_POINTCLOUD=PEPPER_POINTCLOUD_DIR+PEPPER_SCENE_NAME
 
 # DIR OBJETOS
 OBJ_DIR = "clouds/objects/"
@@ -16,6 +19,7 @@ MUG_NAME = "s0_mug_corr.pcd"
 PIGGY_NAME = "s0_piggybank_corr.pcd"
 PLANT_NAME = "s0_plant_corr.pcd"
 PLC_NAME = "s0_plc_corr.pcd"
+PEPPER_NAME_OBJ="pcd_33.pcd"
 
 # OBJ PCDS NAMES DIR
 MUG = OBJ_DIR + MUG_NAME
@@ -23,6 +27,7 @@ PIGGY = OBJ_DIR + PIGGY_NAME
 PLANT = OBJ_DIR + PLANT_NAME
 PLC = OBJ_DIR + PLC_NAME
 OBJETOS = [MUG, PIGGY, PLANT, PLC]
+PEPPER="pepper_obj/"+PEPPER_NAME_OBJ
 
 PLANOS = 3
 """
@@ -99,8 +104,8 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
         piggy_pcd,
         salient_radius=0.008,#radio de vecindad
         non_max_radius=0.0055,#filtro para que no estén super cerca
-        gamma_21=0.66,#cambios en la curvatura
-        gamma_32=0.66#cambio de curvatura en otra direccion
+        gamma_21=0.75,#cambios en la curvatura
+        gamma_32=0.75#cambio de curvatura en otra direccion
     )
     #o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
     
@@ -253,8 +258,8 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
 
 if __name__ == '__main__':
     # load both scene and objects pcds
-    piggy_pcd = o3d.io.read_point_cloud(PIGGY) # object
-    og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
+    piggy_pcd = o3d.io.read_point_cloud(PEPPER) # object
+    og_scene_pcd = o3d.io.read_point_cloud(PEPPER_POINTCLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
     # downsample the pcd

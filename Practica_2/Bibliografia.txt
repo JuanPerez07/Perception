@@ -6,3 +6,16 @@ https://www.open3d.org/docs/release/tutorial/geometry/iss_keypoint_detector.html
 
 para ransac:
 https://www.open3d.org/docs/latest/python_api/open3d.geometry.KDTreeFlann.html#open3d.geometry.KDTreeFlann
+
+
+Parametros para piggy:
+key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
+        piggy_pcd,
+        salient_radius=0.008,
+        non_max_radius=0.008,
+        gamma_21=0.5,
+        gamma_32=0.5
+    )
+
+Segmentacion nan
+https://www.open3d.org/2019/01/16/on-point-clouds-semantic-segmentation/
