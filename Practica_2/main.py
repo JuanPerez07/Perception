@@ -2,6 +2,7 @@ import open3d as o3d  # type: ignore
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+# https://prod.liveshare.vsengsaas.visualstudio.com/join?B342C2B022AC843D568A576D153CFA466D48
 
 # DIR SCENES
 POINTCLOUD_DIR = "clouds/scenes/"
