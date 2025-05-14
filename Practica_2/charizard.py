@@ -13,7 +13,7 @@ PLANOS = 4
 """
 Remove planes using RANSAC
 """
-def remove_planes_using_ransac(pcd, threshold=0.04):
+def remove_planes_using_ransac(pcd, threshold=0.05):
     for i in range(PLANOS):
         _, inliers = pcd.segment_plane(
                 distance_threshold=threshold,  # distancia máxima entre un punto y el plano para considerarlo parte de él
@@ -263,11 +263,11 @@ def regionGrowth(pcd, cluster_size=300, angle_threshold_deg=30, distance_thresho
     
     Parámetros:
     - pcd_path: ruta al archivo .pcd
+    - cluster_size: numero de puntos mínimo para considerar un cluster
     - angle_threshold_deg: umbral en grados para diferencia de normales
     - distance_threshold: distancia máxima entre vecinos
     
-    Retorna:
-    - Lista de clusters (cada uno es un open3d.geometry.PointCloud)
+    Return pcd with the points of the cluster list 
     """
     # Estimar las normales
     pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=30))
@@ -311,7 +311,7 @@ def regionGrowth(pcd, cluster_size=300, angle_threshold_deg=30, distance_thresho
             cluster = pcd.select_by_index(cluster_indices)
             clusters.append(cluster)
     
-    assert(len(clusters) != 0)
+    assert(len(clusters) > 0)
     
     clusters_filtered = []
     eliminated_clusters = 0
@@ -321,9 +321,20 @@ def regionGrowth(pcd, cluster_size=300, angle_threshold_deg=30, distance_thresho
         else:
             eliminated_clusters += 1
     print(f"{eliminated_clusters} clusters have been removed using RANSAC")
-    assert(len(clusters_filtered) != 0)
     
-    return clusters_filtered
+    assert(len(clusters_filtered) > 0)
+    
+    # Combinar todos los clusters filtrados en un solo PointCloud
+    all_points = np.vstack([np.asarray(c.points) for c in clusters_filtered])
+    all_colors = np.vstack([
+        np.tile(np.random.rand(3), (len(c.points), 1)) for c in clusters_filtered
+    ])
+
+    combined_pcd = o3d.geometry.PointCloud()
+    combined_pcd.points = o3d.utility.Vector3dVector(all_points)
+    combined_pcd.colors = o3d.utility.Vector3dVector(all_colors)
+
+    return combined_pcd
 
 """
 Segmentar objeto 3D
@@ -333,8 +344,10 @@ def segmentObj(source_pcd):
     obj = downsample_pcd(source_pcd, vx_size=0.01)
     obj = remove_planes_using_ransac(obj)
 
-
+    charmander = regionGrowth(obj)
+    """
     clusters = regionGrowth(obj)
+
 #   Crear carpeta si no existe
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -364,15 +377,16 @@ def segmentObj(source_pcd):
         print(f"Guardado: {OUTPUT_DIR}clusters_combinados.ply")
 
     # Guardar la nube sin planos, posiblemente útil para depuración
-    o3d.io.write_point_cloud(f"{OUTPUT_DIR}obj_segmentado.ply", obj)
-    return obj
+    """
+    o3d.io.write_point_cloud(f"{OUTPUT_DIR}charmander.ply", charmander)
+    return charmander
 
 if __name__ == '__main__':
     # load both scene and objects pcds
     obj_pcd = o3d.io.read_point_cloud(CHARMANDER_SOURCE) # object_scene
     # segment the target obj
     obj_segmented = segmentObj(obj_pcd) # segment the 3D obj
-    quit()
+    #quit()
     og_scene_pcd = o3d.io.read_point_cloud(CHARMANDER_SCENE) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
