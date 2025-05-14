@@ -2,49 +2,19 @@ import open3d as o3d  # type: ignore
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from collections import deque # save clusters
+import os # hanlde directories
 
-# DIR SCENES
-POINTCLOUD_DIR = "clouds/scenes/"
-SCENE_NAME = "snap_0point.pcd"
-PEPPER_POINTCLOUD_DIR="pepper_scene/"
-PEPPER_SCENE_NAME="pcd_21.pcd"
-ORIGINAL_CLOUD = POINTCLOUD_DIR + SCENE_NAME
-OUTPUT_DIR = "clouds/scenes/"
-PEPPER_POINTCLOUD=PEPPER_POINTCLOUD_DIR+PEPPER_SCENE_NAME
-
-# DIR OBJETOS
-OBJ_DIR = "clouds/objects/"
-MUG_NAME = "s0_mug_corr.pcd"
-PIGGY_NAME = "s0_piggybank_corr.pcd"
-PLANT_NAME = "s0_plant_corr.pcd"
-PLC_NAME = "s0_plc_corr.pcd"
-PEPPER_NAME_OBJ="pcd_33.pcd"
-
-# OBJ PCDS NAMES DIR
-MUG = OBJ_DIR + MUG_NAME
-PIGGY = OBJ_DIR + PIGGY_NAME
-PLANT = OBJ_DIR + PLANT_NAME
-PLC = OBJ_DIR + PLC_NAME
-OBJETOS = [MUG, PIGGY, PLANT, PLC]
-PEPPER="pepper_obj/"+PEPPER_NAME_OBJ
-
-# PARTE ADICIONAL
+# DIRs
 CHARMANDER_SOURCE = "charmander_obj/pcd_9.pcd"
 CHARMANDER_SCENE = "clutter_scene/pcd_26.pcd"
-
+OUTPUT_DIR = "clutter_scene/"
 PLANOS = 3
 """
 Remove planes using RANSAC
 """
-def remove_planes_using_ransac(pcd):
-    threshold=0.03
+def remove_planes_using_ransac(pcd, threshold=0.03):
     for i in range(PLANOS):
-        
-        # detect a plane in the cloud
-        if i==2:
-            threshold=0.017
-        else:
-            threshold=0.03
         _, inliers = pcd.segment_plane(
                 distance_threshold=threshold,  # distancia máxima entre un punto y el plano para considerarlo parte de él
                 ransac_n=3,               # número de puntos aleatorios usados para estimar un plano
@@ -53,7 +23,7 @@ def remove_planes_using_ransac(pcd):
         # keep only the outliers
         pcd = pcd.select_by_index(inliers, invert=True)
         # save the pcd without the inliers (only outliers)
-        o3d.io.write_point_cloud(f"{OUTPUT_DIR}step_ransac_{i}.ply", pcd)
+        #o3d.io.write_point_cloud(f"{OUTPUT_DIR}step_ransac_{i}.ply", pcd)
         
     #o3d.visualization.draw_geometries([pcd],'Ver')
     return pcd
@@ -259,10 +229,148 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
     #o3d.visualization.draw_geometries([escena_completa],'Final')
     #return escena_completa
 
+def es_primitiva(cluster, plane_ratio=0.9, plano_thresh=0.01, linealidad_thresh=0.95):
+    """
+    Devuelve True si el cluster representa una forma geométrica simple (plano o línea).
+    """
+    try:
+        plane_model, inliers = cluster.segment_plane(distance_threshold=plano_thresh,
+                                                     ransac_n=3,
+                                                     num_iterations=1000)
+        if len(inliers) / len(cluster.points) > plane_ratio:
+            return True  # Se ajusta fuertemente a un plano
+    except:
+        pass
+
+    # 2. Verificar si los puntos son casi lineales usando PCA
+    pts = np.asarray(cluster.points)
+    if pts.shape[0] < 3:
+        return True
+
+    centered = pts - np.mean(pts, axis=0)
+    cov = np.cov(centered.T)
+    eigvals, _ = np.linalg.eigh(cov)
+    eigvals = np.sort(eigvals)[::-1]
+
+    if eigvals[1] / eigvals[0] < (1 - linealidad_thresh):
+        return True  # Segunda componente muy pequeña → estructura lineal
+
+    return False  # No parece primitiva
+
+def regionGrowth(pcd, cluster_size=200, angle_threshold_deg=30, distance_threshold=0.02):
+    """
+    Segmentación por crecimiento de regiones basada en normales.
+    
+    Parámetros:
+    - pcd_path: ruta al archivo .pcd
+    - angle_threshold_deg: umbral en grados para diferencia de normales
+    - distance_threshold: distancia máxima entre vecinos
+    
+    Retorna:
+    - Lista de clusters (cada uno es un open3d.geometry.PointCloud)
+    """
+    # Estimar las normales
+    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=30))
+    pcd.normalize_normals()
+
+    points = np.asarray(pcd.points)
+    normals = np.asarray(pcd.normals)
+    n_points = len(points)
+    
+    angle_threshold = np.cos(np.deg2rad(angle_threshold_deg))  # cos(angle)
+
+    # KD-tree para buscar vecinos
+    kdtree = o3d.geometry.KDTreeFlann(pcd)
+    
+    visited = np.zeros(n_points, dtype=bool)
+    clusters = []
+
+    for i in range(n_points):
+        if visited[i]:
+            continue
+
+        queue = deque()
+        queue.append(i)
+        visited[i] = True
+        cluster_indices = [i]
+
+        while queue:
+            current = queue.popleft()
+            [_, idxs, dists] = kdtree.search_radius_vector_3d(pcd.points[current], distance_threshold)
+            for j in idxs:
+                if not visited[j]:
+                    # Comparar normales
+                    dot = np.dot(normals[current], normals[j])
+                    if dot > angle_threshold:
+                        visited[j] = True
+                        queue.append(j)
+                        cluster_indices.append(j)
+
+        # Si el cluster es suficientemente grande
+        if len(cluster_indices) > cluster_size:
+            cluster = pcd.select_by_index(cluster_indices)
+            clusters.append(cluster)
+    
+    assert(len(clusters) != 0)
+    
+    clusters_filtered = []
+    for c in clusters:
+        if not es_primitiva(c):
+            clusters_filtered.append(c)
+    
+    assert(len(clusters_filtered) != 0)
+    
+    return clusters_filtered
+
+"""
+Segmentar objeto 3D
+"""
+def segmentObj(source_pcd):
+    # downsample pcd and remove planes first
+    obj = downsample_pcd(source_pcd, vx_size=0.01)
+    obj = remove_planes_using_ransac(obj)
+
+
+    clusters = regionGrowth(obj)
+#   Crear carpeta si no existe
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # Crear una lista para juntar todos los puntos coloreados
+    combined_points = []
+    combined_colors = []
+
+    for i, cluster in enumerate(clusters):
+        # Color aleatorio por cluster
+        color = np.random.rand(3)
+        np_cluster_points = np.asarray(cluster.points)
+        np_colors = np.tile(color, (len(np_cluster_points), 1))
+
+        combined_points.append(np_cluster_points)
+        combined_colors.append(np_colors)
+
+    # Combinar en una sola nube
+    if combined_points:
+        all_points = np.vstack(combined_points)
+        all_colors = np.vstack(combined_colors)
+
+        combined_pcd = o3d.geometry.PointCloud()
+        combined_pcd.points = o3d.utility.Vector3dVector(all_points)
+        combined_pcd.colors = o3d.utility.Vector3dVector(all_colors)
+
+        o3d.io.write_point_cloud(f"{OUTPUT_DIR}clusters_combinados.ply", combined_pcd)
+        print(f"Guardado: {OUTPUT_DIR}clusters_combinados.ply")
+
+    # Guardar la nube sin planos, posiblemente útil para depuración
+    o3d.io.write_point_cloud(f"{OUTPUT_DIR}obj_segmentado.ply", obj)
+    return obj
+
 if __name__ == '__main__':
     # load both scene and objects pcds
-    piggy_pcd = o3d.io.read_point_cloud(PLANT) # object
-    og_scene_pcd = o3d.io.read_point_cloud(SCENE_NAME) # scene 
+    obj_pcd = o3d.io.read_point_cloud(CHARMANDER_SOURCE) # object_scene
+    # segment the target obj
+    obj_segmented = segmentObj(obj_pcd) # segment the 3D obj
+    quit()
+    og_scene_pcd = o3d.io.read_point_cloud(CHARMANDER_SCENE) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
     # downsample the pcd
@@ -280,15 +388,15 @@ if __name__ == '__main__':
     #o3d.visualization.draw_geometries([scene_pcd],'Nube de puntos cambiado')
 
     # Compute the keypoints for scene and object
-    kp_scene, kp_obj = detect_keypoints_iss(scene_pcd,piggy_pcd)
+    kp_scene, kp_obj = detect_keypoints_iss(scene_pcd,obj_segmented)
     # Compute the decriptors for scene keypoints and obj keypoints using FPFH
     scene_desc = descript_fpfh(kp_scene, scene_pcd)
     print("Descriptors calculated for scene")
-    obj_desc = descript_fpfh(kp_obj, piggy_pcd)
+    obj_desc = descript_fpfh(kp_obj, obj_segmented)
     print("Descriptors calculated for object")
     # Realizar matching entre los descriptores usando KDTree junto a RANSAC para filtrar
     match_result = matching(scene_desc, obj_desc, kp_scene, kp_obj) # incluye matriz de transformacion R|t
     print("Matching done with KDTreeFlann and RANSAC")
     # nube de puntos de la escena con el objeto detectado
-    insertar_objeto_en_escena(og_scene_pcd, piggy_pcd, match_result.transformation)
+    insertar_objeto_en_escena(og_scene_pcd, obj_segmented, match_result.transformation)
     print("Program successfully terminated")
