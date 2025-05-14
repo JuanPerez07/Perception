@@ -9,11 +9,11 @@ import os # hanlde directories
 CHARMANDER_SOURCE = "charmander_obj/pcd_9.pcd"
 CHARMANDER_SCENE = "clutter_scene/pcd_26.pcd"
 OUTPUT_DIR = "clutter_scene/"
-PLANOS = 3
+PLANOS = 4
 """
 Remove planes using RANSAC
 """
-def remove_planes_using_ransac(pcd, threshold=0.03):
+def remove_planes_using_ransac(pcd, threshold=0.04):
     for i in range(PLANOS):
         _, inliers = pcd.segment_plane(
                 distance_threshold=threshold,  # distancia máxima entre un punto y el plano para considerarlo parte de él
