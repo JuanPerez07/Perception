@@ -257,7 +257,7 @@ def es_primitiva(cluster, plane_ratio=0.9, plano_thresh=0.01, linealidad_thresh=
 
     return False  # No parece primitiva
 
-def regionGrowth(pcd, cluster_size=200, angle_threshold_deg=30, distance_threshold=0.02):
+def regionGrowth(pcd, cluster_size=300, angle_threshold_deg=30, distance_threshold=0.02):
     """
     Segmentación por crecimiento de regiones basada en normales.
     
@@ -314,10 +314,13 @@ def regionGrowth(pcd, cluster_size=200, angle_threshold_deg=30, distance_thresho
     assert(len(clusters) != 0)
     
     clusters_filtered = []
+    eliminated_clusters = 0
     for c in clusters:
         if not es_primitiva(c):
             clusters_filtered.append(c)
-    
+        else:
+            eliminated_clusters += 1
+    print(f"{eliminated_clusters} clusters have been removed using RANSAC")
     assert(len(clusters_filtered) != 0)
     
     return clusters_filtered
