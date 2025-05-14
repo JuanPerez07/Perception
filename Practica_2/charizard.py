@@ -60,9 +60,10 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
     #o3d.io.write_point_cloud(f"{OUTPUT_DIR}scene_keypoints.ply", key_scene)
 
     # OBJETO: PIGGYBANK
-    piggy_pcd = pcd_object
+    #piggy_pcd = pcd_object
+    
     # Estimar normales
-    piggy_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
+    pcd_object.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
     
     """ Calculo de keypoints para piggy 
     key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
@@ -73,23 +74,30 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
         gamma_32=0.5
     )
     """
-    key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
-        piggy_pcd,
-        salient_radius=0.008,#radio de vecindad
-        non_max_radius=0.0055,#filtro para que no estén super cerca
-        gamma_21=0.75,#cambios en la curvatura
-        gamma_32=0.75#cambio de curvatura en otra direccion
+    # Estimar keypoints del objeto
+    bbox = pcd_object.get_axis_aligned_bounding_box()
+    diag = np.linalg.norm(np.asarray(bbox.get_max_bound()) - np.asarray(bbox.get_min_bound()))
+    voxel_size = diag * 0.01  # para nubes pequeñas puede ser 0.005–0.02
+
+    key_obj = o3d.geometry.keypoint.compute_iss_keypoints(
+        pcd_object,
+        salient_radius=5 * voxel_size,
+        non_max_radius=3 * voxel_size,
+        gamma_21=0.5,
+        gamma_32=0.5,
+        min_neighbors=3
     )
+
     #o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
     
 
     print("Keypoints detected with ISS for scene and object")
 
-    key_piggy.paint_uniform_color([1, 0, 1])
-    piggy_pcd.paint_uniform_color([0, 0.5, 0.5])
+    key_obj.paint_uniform_color([1, 0, 1])
+    key_obj.paint_uniform_color([0, 0.5, 0.5])
     #o3d.visualization.draw_geometries([key_piggy,piggy_pcd],'Key de figura')
     # Return the scene and object keypoints
-    return key_scene, key_piggy
+    return key_scene, key_obj
 
 
 """
