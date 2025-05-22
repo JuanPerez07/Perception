@@ -216,7 +216,7 @@ def refine_registration_icp(source, target, init_transform, voxel_size=0.005):
         target,
         max_correspondence_distance=distance_threshold,
         init=init_transform,
-        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
         criteria=o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=50)
     )
     
@@ -261,7 +261,7 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
 
 if __name__ == '__main__':
     # load both scene and objects pcds
-    obj_pcd = o3d.io.read_point_cloud(PIGGY) # object
+    obj_pcd = o3d.io.read_point_cloud(MUG) # object
     og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
