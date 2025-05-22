@@ -42,7 +42,7 @@ def remove_planes_using_ransac(pcd):
         
         # detect a plane in the cloud
         if i==2:
-            threshold=0.017
+            threshold=0.02
         else:
             threshold=0.03
         _, inliers = pcd.segment_plane(
@@ -107,8 +107,8 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
         piggy_pcd,
         salient_radius=0.008,#radio de vecindad
         non_max_radius=0.0055,#filtro para que no estén super cerca
-        gamma_21=0.75,#cambios en la curvatura
-        gamma_32=0.75#cambio de curvatura en otra direccion
+        gamma_21=0.69,#cambios en la curvatura
+        gamma_32=0.69#cambio de curvatura en otra direccion
     )
     #o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
     
@@ -169,7 +169,7 @@ def matching(desc_scene, desc_obj, key_scene, key_obj, max_dist=0.025):
     exportar_correspondencias_a_obj(key_obj, key_scene, corres)
     # params ajustar correspondencias
     edge_length = 0.45
-    normal_angle_thres = math.pi / 8 # algo degrees
+    normal_angle_thres = math.pi / 10 # algo degrees
     distance_threshold = 0.16
     result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
         key_obj,  # objeto = source
@@ -256,13 +256,13 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
 
     # Guardamos o retornamos la nube combinada
     o3d.io.write_point_cloud(f"{OUTPUT_DIR}objeto_inyectado_en_escena.ply", escena_completa)
-    #o3d.visualization.draw_geometries([escena_completa],'Final')
+    o3d.visualization.draw_geometries([escena_completa],'Final')
     #return escena_completa
 
 if __name__ == '__main__':
     # load both scene and objects pcds
     piggy_pcd = o3d.io.read_point_cloud(PLANT) # object
-    og_scene_pcd = o3d.io.read_point_cloud(SCENE_NAME) # scene 
+    og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
     # downsample the pcd
