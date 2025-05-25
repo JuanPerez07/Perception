@@ -1,56 +1,122 @@
-# Practica 1: Camera Calibration 📷🔍
+# Proyecto de Visión 3D y Detección de Objetos 🤖📷
 
-This project performs **camera calibration** using the chessboard pattern and **point cloud projection** for 3D vision applications. It includes tools for dataset collection, calibration processing, point cloud generation, and evaluation of calibration results.
+Este repositorio agrupa dos prácticas independientes:
 
----
-
-## **Project Structure** 📂
-
-```
-📦 Practica_1
-├── main.py                 # Main script for camera calibration
-├── generate_pcd.py         # Converts STL model surface into a point cloud (.pcd)
-├── create_dataset.py       # Captures images of the calibration pattern using a webcam
-├── figure3D.py             # Projects two point clouds onto the calibration pattern in live video
-├── params/                 # Stores camera calibration parameters
-├── dataset/                # Contains images used for the calibration process
-├── pointcloud/             # Contains .pcd files for experimentation
-├── mre_comparison/         # Stores results comparing different camera calibrations
-└── (Other files)           # Used to scale and transform raw point clouds from STL models
-```
+- **Practica_1**: Calibración de cámara y proyección de nubes de puntos.
+- **Practica_2**: Detección y alineación de objetos 3D mediante un pipeline tradicional.
 
 ---
 
-## **Usage** 🚀
+## Estructura del proyecto 📂
 
-### **1) Camera Calibration**
-Run `main.py` to calibrate the camera and save the calibration parameters:
+```
+📦 .
+├── Practica_1/
+│   ├── main.py
+│   ├── generate_pcd.py
+│   ├── create_dataset.py
+│   ├── figure3D.py
+│   ├── params/
+│   ├── dataset/
+│   ├── pointcloud/
+│   ├── mre_comparison/
+│   └── (otros scripts y recursos para calibración)
+└── Practica_2/
+    ├── main.py           # Pipeline de detección y alineación
+    ├── charizard.py      # Segmentación 3D de Charmander + pipeline completo
+    └── datos/            # Modelos y nubes de puntos de escena y objetos
+```
+
+---
+
+## Practica_1: Calibración de Cámara 📷🔍
+
+Este módulo permite calibrar una cámara con un patrón de ajedrez y proyectar nubes de puntos en vídeo en tiempo real.
+
+### 1. Calibración de Cámara  
 ```bash
 python main.py
 ```
-- The results will be stored in the `params/` directory.
+Guarda los parámetros en `params/`.
 
-### **2) Visualizing 3D Projections in Live Video**
-Run `figure3D.py` to project point clouds onto the calibration pattern in real time:
+### 2. Generar Nube de Puntos desde STL  
 ```bash
-python figure3D.py
+python generate_pcd.py --input modelo.stl --output nube.pcd
+```
+
+### 3. Capturar Dataset de Imágenes  
+```bash
+python create_dataset.py --output dataset/
+```
+
+### 4. Proyección 3D en Vídeo  
+```bash
+python figure3D.py --params params/ --pcd pointcloud/mi_nube.pcd
+```
+
+### 5. Análisis Experimental  
+- Carpeta `mre_comparison/` con estudio de **Mean Reprojection Error** para distintos calibrados.
+
+---
+
+## Practica_2: Detección y Alineación de Objetos 🛠️☁️
+
+Objetivo: hallar la transformación rígida que alinea la nube de puntos de un objeto dentro de una escena.
+
+### 1. Reducción de la nube de puntos  
+- Downsampling para disminuir densidad y coste computacional.  
+- Elimina redundancia (puntos cercanos) y mejora estabilidad de la convergencia.
+
+### 2. Eliminación de planos dominantes  
+- Segmenta y descarta grandes planos (p. ej. mesas) usando un umbral de distancia.  
+- [Insertar imágenes antes/después de la eliminación de planos]
+
+### 3. Detección de puntos de interés  
+- Algoritmo **ISS** (Open3D) sobre escena y objeto:  
+  - Estimación de normales vía KD-Tree + KNN.  
+  - Parámetros clave:  
+    - `salient_radius`, `non_max_radius`, `gamma_21`, `gamma_32`  
+  - Visualización de keypoints coloreados.
+
+### 4. Cálculo de descriptores FPFH  
+- Calcula FPFH en radio y vecindad definidos (requiere normales previas).  
+- Extrae descriptor sólo en los keypoints usando KD-TreeFlann.
+
+### 5. Emparejamiento inicial y RANSAC  
+- Correspondencias con `search_knn_vector_xd`.  
+- Filtrado RANSAC sobre correspondencias:  
+  - Umbrales: `edge_length`, `distance`, `normal_angle`.  
+- Obtiene **transformación rígida** inicial basada en inliers.
+
+### 6. Refinamiento con ICP  
+- Usa la transformación de RANSAC como punto de partida.  
+- Algoritmo **ICP punto-a-plano** (Open3D) para minimizar error iterativamente.  
+- Parámetros: umbral de distancia, límite de iteraciones, criterio de convergencia.
+
+---
+
+## Cómo usar Practica_2 🚀
+
+```bash
+cd Practica_2
+# Alineación genérica
+python main.py --scene datos/escena.pcd --object datos/objeto.pcd
+
+# Segmentación de Charmander + pipeline completo
+python charizard.py --scene datos/escena_con_charizard.pcd --model datos/charmander.pcd
 ```
 
 ---
 
-## **Experimental Results** 📊
-- The **mre_comparison/** folder contains **Mean Reprojection Error (MRE) analysis** comparing different calibration results.
-- Raw point clouds extracted from STL models were **scaled and transformed** for improved accuracy.
+## Dependencias 🛠
 
----
-
-## **Requirements** 🛠
-Ensure you have the required Python packages installed:
 ```bash
 pip install numpy opencv-python open3d
 ```
 
 ---
 
-## **Authors** 📝
-Developed by **Aitor Ruiz Bautista** and **Juan Pérez Fernández**.
+## Autores 📝
+
+- **Aitor Ruiz Bautista**  
+- **Juan Pérez Fernández**
