@@ -7,7 +7,8 @@ import os # hanlde directories
 
 # DIRs
 CHARMANDER_SOURCE = "charmander_obj/pcd_9.pcd"
-CHARMANDER_SCENE = "clutter_scene/pcd_26.pcd"
+#CHARMANDER_SCENE = "clutter_scene/pcd_26.pcd"
+CHARMANDER_SCENE = CHARMANDER_SOURCE
 OUTPUT_DIR = "clutter_scene/"
 PLANOS = 4
 """
@@ -88,14 +89,16 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
         min_neighbors=3
     )
 
-    #o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
+    
     
 
     print("Keypoints detected with ISS for scene and object")
 
     key_obj.paint_uniform_color([1, 0, 1])
     key_obj.paint_uniform_color([0, 0.5, 0.5])
-    #o3d.visualization.draw_geometries([key_piggy,piggy_pcd],'Key de figura')
+    # guardar keypoints coloreados tal que asi:
+    #o3d.io.write_point_cloud(f"{OUTPUT_DIR}kp_iss.ply", key_obj)
+   
     # Return the scene and object keypoints
     return key_scene, key_obj
 
@@ -389,12 +392,26 @@ def segmentObj(source_pcd):
     o3d.io.write_point_cloud(f"{OUTPUT_DIR}charmander.ply", charmander)
     return charmander
 
+"""Refinamiento con ICP"""
+def refine_registration_icp(source, target, init_transform, voxel_size=0.005):
+    distance_threshold = voxel_size * 2 # o prueba con voxel_size * 2
+    
+    icp_result = o3d.pipelines.registration.registration_icp(
+        source,
+        target,
+        max_correspondence_distance=distance_threshold,
+        init=init_transform,
+        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+        criteria=o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=50)
+    )
+    
+    return icp_result
+
 if __name__ == '__main__':
     # load both scene and objects pcds
     obj_pcd = o3d.io.read_point_cloud(CHARMANDER_SOURCE) # object_scene
     # segment the target obj
     obj_segmented = segmentObj(obj_pcd) # segment the 3D obj
-    quit()
     og_scene_pcd = o3d.io.read_point_cloud(CHARMANDER_SCENE) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
@@ -422,6 +439,8 @@ if __name__ == '__main__':
     # Realizar matching entre los descriptores usando KDTree junto a RANSAC para filtrar
     match_result = matching(scene_desc, obj_desc, kp_scene, kp_obj) # incluye matriz de transformacion R|t
     print("Matching done with KDTreeFlann and RANSAC")
+    # Refinar con ICP
+    match_result=refine_registration_icp(obj_pcd,scene_pcd,match_result.transformation,vx_size)
     # nube de puntos de la escena con el objeto detectado
     insertar_objeto_en_escena(og_scene_pcd, obj_segmented, match_result.transformation)
     print("Program successfully terminated")

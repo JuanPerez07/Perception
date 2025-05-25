@@ -305,7 +305,7 @@ if __name__ == '__main__':
     match_result = matching(scene_desc, obj_desc, kp_scene, kp_obj) # incluye matriz de transformacion R|t
     print("Matching done with KDTreeFlann and RANSAC")
     #Con ICP
-    #match_result=refine_registration_icp(obj_pcd,scene_pcd,match_result.transformation,vx_size)
+    match_result=refine_registration_icp(obj_pcd,scene_pcd,match_result.transformation,vx_size)
     # nube de puntos de la escena con el objeto detectado
     insertar_objeto_en_escena(og_scene_pcd, obj_pcd, match_result.transformation)
     print("Program successfully terminated")
