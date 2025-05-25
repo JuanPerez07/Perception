@@ -90,36 +90,36 @@ def detect_keypoints_iss(pcd_scene, pcd_object):
     #o3d.io.write_point_cloud(f"{OUTPUT_DIR}scene_keypoints.ply", key_scene)
 
     # OBJETO: PIGGYBANK
-    piggy_pcd = pcd_object
-    # Estimar normales
-    piggy_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
     
-    """ Calculo de keypoints para piggy 
-    key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
-        piggy_pcd,
+    # Estimar normales
+    pcd_object.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
+    
+    """ Calculo de keypoints para plant"""
+    key_obj = o3d.geometry.keypoint.compute_iss_keypoints(
+        pcd_object,
         salient_radius=0.008,
-        non_max_radius=0.008,
-        gamma_21=0.5,
-        gamma_32=0.5
+        non_max_radius=0.0055,
+        gamma_21=0.69,
+        gamma_32=0.69
     )
     """
-    key_piggy = o3d.geometry.keypoint.compute_iss_keypoints(
-        piggy_pcd,
+    key_obj = o3d.geometry.keypoint.compute_iss_keypoints(
+        pcd_object,
         salient_radius=0.008,#radio de vecindad
-        non_max_radius=0.0055,#filtro para que no estén super cerca
-        gamma_21=0.69,#cambios en la curvatura
-        gamma_32=0.69#cambio de curvatura en otra direccion
+        non_max_radius=0.0075,#filtro para que no estén super cerca
+        gamma_21=0.5,#cambios en la curvatura
+        gamma_32=0.5#cambio de curvatura en otra direccion
     )
     #o3d.io.write_point_cloud(f"{OBJ_DIR}piggy_kp_iss.ply", key_piggy)
-    
+    """
 
     print("Keypoints detected with ISS for scene and object")
 
-    key_piggy.paint_uniform_color([1, 0, 1])
-    piggy_pcd.paint_uniform_color([0, 0.5, 0.5])
-    #o3d.visualization.draw_geometries([key_piggy,piggy_pcd],'Key de figura')
+    key_obj.paint_uniform_color([1, 0, 1])
+    pcd_object.paint_uniform_color([0, 0.5, 0.5])
+    #o3d.visualization.draw_geometries([key_obj,pcd_object],'Key de figura')
     # Return the scene and object keypoints
-    return key_scene, key_piggy
+    return key_scene, key_obj
 
 
 """
@@ -242,6 +242,21 @@ def exportar_correspondencias_a_obj(kp_obj, kp_scene, correspondences, file_path
         for i in range(0, len(vertices), 2):
             f.write(f"l {i + 1} {i + 2}\n")
 
+"""Refinamiento con ICP"""
+def refine_registration_icp(source, target, init_transform, voxel_size=0.005):
+    distance_threshold = voxel_size *1.5 # o prueba con voxel_size * 2
+    
+    icp_result = o3d.pipelines.registration.registration_icp(
+        source,
+        target,
+        max_correspondence_distance=distance_threshold,
+        init=init_transform,
+        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+        criteria=o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=50)
+    )
+    
+    return icp_result
+
 """
 Insertar en la nube de puntos de la escena el objeto usando la matriz R | t
 """
@@ -261,10 +276,10 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
 
 if __name__ == '__main__':
     # load both scene and objects pcds
-    piggy_pcd = o3d.io.read_point_cloud(PLANT) # object
+    obj_pcd = o3d.io.read_point_cloud(MUG) # object
     og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
-
+    #o3d.visualization.draw_geometries([obj_pcd],'Objeto')
     # downsample the pcd
     vx_size = 0.005
     scene_pcd = downsample_pcd(og_scene_pcd, vx_size)
@@ -280,15 +295,17 @@ if __name__ == '__main__':
     #o3d.visualization.draw_geometries([scene_pcd],'Nube de puntos cambiado')
 
     # Compute the keypoints for scene and object
-    kp_scene, kp_obj = detect_keypoints_iss(scene_pcd,piggy_pcd)
+    kp_scene, kp_obj = detect_keypoints_iss(scene_pcd,obj_pcd)
     # Compute the decriptors for scene keypoints and obj keypoints using FPFH
     scene_desc = descript_fpfh(kp_scene, scene_pcd)
     print("Descriptors calculated for scene")
-    obj_desc = descript_fpfh(kp_obj, piggy_pcd)
+    obj_desc = descript_fpfh(kp_obj, obj_pcd)
     print("Descriptors calculated for object")
     # Realizar matching entre los descriptores usando KDTree junto a RANSAC para filtrar
     match_result = matching(scene_desc, obj_desc, kp_scene, kp_obj) # incluye matriz de transformacion R|t
     print("Matching done with KDTreeFlann and RANSAC")
+    #Con ICP
+    match_result=refine_registration_icp(obj_pcd,scene_pcd,match_result.transformation,vx_size)
     # nube de puntos de la escena con el objeto detectado
-    insertar_objeto_en_escena(og_scene_pcd, piggy_pcd, match_result.transformation)
+    insertar_objeto_en_escena(og_scene_pcd, obj_pcd, match_result.transformation)
     print("Program successfully terminated")
