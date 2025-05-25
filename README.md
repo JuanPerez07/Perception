@@ -43,9 +43,10 @@ Guarda los parámetros en `params/`.
 ```bash
 python figure3D.py
 ```
+Proyecta sobre el patrón de calibración dos modelos CAD en 3D.
 
 ### 3. Análisis Experimental  
-- Carpeta `mre_comparison/` con estudio de **Mean Reprojection Error** para distintos calibrados.
+- Carpeta `mre_comparison/` con estudio de **Mean Reprojection Error** para distintos tamaños de dataset.
 
 ---
 
@@ -58,8 +59,7 @@ Objetivo: hallar la transformación rígida que alinea la nube de puntos de un o
 - Elimina redundancia (puntos cercanos) y mejora estabilidad de la convergencia.
 
 ### 2. Eliminación de planos dominantes  
-- Segmenta y descarta grandes planos (p. ej. mesas) usando un umbral de distancia.  
-- [Insertar imágenes antes/después de la eliminación de planos]
+- Segmenta y descarta planos dominantes (p. ej. mesas) usando un umbral de distancia.  
 
 ### 3. Detección de puntos de interés  
 - Algoritmo **ISS** (Open3D) sobre escena y objeto:  
@@ -70,7 +70,7 @@ Objetivo: hallar la transformación rígida que alinea la nube de puntos de un o
 
 ### 4. Cálculo de descriptores FPFH  
 - Calcula FPFH en radio y vecindad definidos (requiere normales previas).  
-- Extrae descriptor sólo en los keypoints usando KD-TreeFlann.
+- Extrae descriptor de los keypoints usando KD-TreeFlann.
 
 ### 5. Emparejamiento inicial y RANSAC  
 - Correspondencias con `search_knn_vector_xd`.  
