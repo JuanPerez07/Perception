@@ -271,12 +271,12 @@ def insertar_objeto_en_escena(scene_pcd, obj_pcd, transformation_matrix):
 
     # Guardamos o retornamos la nube combinada
     o3d.io.write_point_cloud(f"{OUTPUT_DIR}objeto_inyectado_en_escena.ply", escena_completa)
-    o3d.visualization.draw_geometries([escena_completa],'Final')
+    #o3d.visualization.draw_geometries([escena_completa],'Final')
     #return escena_completa
 
 if __name__ == '__main__':
     # load both scene and objects pcds
-    obj_pcd = o3d.io.read_point_cloud(MUG) # object
+    obj_pcd = o3d.io.read_point_cloud(PIGGY) # object
     og_scene_pcd = o3d.io.read_point_cloud(ORIGINAL_CLOUD) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
     #o3d.visualization.draw_geometries([obj_pcd],'Objeto')
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     match_result = matching(scene_desc, obj_desc, kp_scene, kp_obj) # incluye matriz de transformacion R|t
     print("Matching done with KDTreeFlann and RANSAC")
     #Con ICP
-    match_result=refine_registration_icp(obj_pcd,scene_pcd,match_result.transformation,vx_size)
+    #match_result=refine_registration_icp(obj_pcd,scene_pcd,match_result.transformation,vx_size)
     # nube de puntos de la escena con el objeto detectado
     insertar_objeto_en_escena(og_scene_pcd, obj_pcd, match_result.transformation)
     print("Program successfully terminated")

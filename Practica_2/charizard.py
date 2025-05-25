@@ -13,7 +13,7 @@ PLANOS = 4
 """
 Remove planes using RANSAC
 """
-def remove_planes_using_ransac(pcd, threshold=0.05):
+def remove_planes_using_ransac(pcd, threshold=0.06):
     for i in range(PLANOS):
         _, inliers = pcd.segment_plane(
                 distance_threshold=threshold,  # distancia máxima entre un punto y el plano para considerarlo parte de él
@@ -394,7 +394,7 @@ if __name__ == '__main__':
     obj_pcd = o3d.io.read_point_cloud(CHARMANDER_SOURCE) # object_scene
     # segment the target obj
     obj_segmented = segmentObj(obj_pcd) # segment the 3D obj
-    #quit()
+    quit()
     og_scene_pcd = o3d.io.read_point_cloud(CHARMANDER_SCENE) # scene 
     # o3d.visualization.draw_geometries([pcd], 'Nube de puntos original')
 
