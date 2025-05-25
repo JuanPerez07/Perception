@@ -39,22 +39,12 @@ python main.py
 ```
 Guarda los parámetros en `params/`.
 
-### 2. Generar Nube de Puntos desde STL  
+### 2. Proyección 3D en Vídeo  
 ```bash
-python generate_pcd.py --input modelo.stl --output nube.pcd
+python figure3D.py
 ```
 
-### 3. Capturar Dataset de Imágenes  
-```bash
-python create_dataset.py --output dataset/
-```
-
-### 4. Proyección 3D en Vídeo  
-```bash
-python figure3D.py --params params/ --pcd pointcloud/mi_nube.pcd
-```
-
-### 5. Análisis Experimental  
+### 3. Análisis Experimental  
 - Carpeta `mre_comparison/` con estudio de **Mean Reprojection Error** para distintos calibrados.
 
 ---
