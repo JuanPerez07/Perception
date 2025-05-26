@@ -89,11 +89,11 @@ Objetivo: hallar la transformación rígida que alinea la nube de puntos de un o
 
 ```bash
 cd Practica_2
-# Alineación genérica
-python main.py --scene datos/escena.pcd --object datos/objeto.pcd
+# Alineación genérica con el pipeline tradicional
+python main.py 
 
 # Segmentación de Charmander + pipeline completo
-python charizard.py --scene datos/escena_con_charizard.pcd --model datos/charmander.pcd
+python charizard.py 
 ```
 
 ---
